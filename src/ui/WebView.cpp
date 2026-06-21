@@ -208,6 +208,9 @@ namespace wil::ui
     {
         auto const webContext = webkit_web_view_get_context(*this);
 
+        // WhatsApp Web is a single long-lived SPA, so a browsing cache only wastes memory.
+        webkit_web_context_set_cache_model(webContext, WEBKIT_CACHE_MODEL_DOCUMENT_VIEWER);
+
         auto configDir   = Glib::get_user_config_dir();
         auto cssFilePath = configDir + "/" + WIL_NAME + "/web.css";
 
@@ -237,6 +240,9 @@ namespace wil::ui
         auto const settings = webkit_web_view_get_settings(*this);
         webkit_settings_set_user_agent(settings, USER_AGENT);
         webkit_settings_set_enable_developer_extras(settings, TRUE);
+        // Trim memory/GPU work that a single-page chat client never benefits from.
+        webkit_settings_set_enable_page_cache(settings, FALSE);
+        webkit_settings_set_enable_smooth_scrolling(settings, FALSE);
         auto const hwAccelPolicy = toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
         webkit_settings_set_hardware_acceleration_policy(settings, hwAccelPolicy);
         webkit_settings_set_minimum_font_size(settings, util::Settings::getInstance().getValue<int>("web", "min-font-size", 0));
