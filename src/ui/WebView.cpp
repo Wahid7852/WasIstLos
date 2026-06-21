@@ -273,10 +273,6 @@ namespace wil::ui
         auto const userAgent = util::Settings::getInstance().getValue<Glib::ustring>("web", "user-agent", "");
         webkit_settings_set_user_agent(settings, userAgent.empty() ? USER_AGENT : userAgent.c_str());
         webkit_settings_set_enable_developer_extras(settings, TRUE);
-        // WhatsApp Web has no 3D content; keeping WebGL and GPU-accelerated 2D canvas off avoids
-        // holding extra GPU contexts. Media/WebRTC stay enabled so voice/video calls keep working.
-        webkit_settings_set_enable_webgl(settings, FALSE);
-        webkit_settings_set_enable_2d_canvas_acceleration(settings, FALSE);
         auto hwAccelPolicy = toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
         if (util::Settings::getInstance().getValue<bool>("web", "low-gpu-mode", false))
         {
