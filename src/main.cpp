@@ -41,10 +41,14 @@ namespace
     // before the first web context (i.e. the first WebView) is created.
     void applyMemoryPressureSettings()
     {
+        // Note: WhatsApp Web's live JS heap (~1 GB) cannot be reclaimed by cache eviction; these
+        // thresholds keep caches small and, as a last resort, kill a truly runaway web process
+        // (the kill is caught by WebView's crash handler, which reloads the page).
         WebKitMemoryPressureSettings* const settings = webkit_memory_pressure_settings_new();
-        webkit_memory_pressure_settings_set_memory_limit(settings, 2048U);          // MB
+        webkit_memory_pressure_settings_set_memory_limit(settings, 1536U);          // MB
         webkit_memory_pressure_settings_set_conservative_threshold(settings, 0.33); // start releasing caches
         webkit_memory_pressure_settings_set_strict_threshold(settings, 0.5);        // release all caches
+        webkit_memory_pressure_settings_set_kill_threshold(settings, 1.5);          // kill a runaway process
         webkit_memory_pressure_settings_set_poll_interval(settings, 15.0);          // seconds
 
         webkit_website_data_manager_set_memory_pressure_settings(settings);
