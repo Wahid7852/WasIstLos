@@ -18,7 +18,16 @@ namespace wil::ui
     namespace
     {
         constexpr auto const WHATSAPP_WEB_URI = "https://web.whatsapp.com";
-        constexpr auto const USER_AGENT       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        constexpr auto const USER_AGENT       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
+
+        // webkit2gtk >= 2.40 dropped the ON_DEMAND policy; the enum is now { ALWAYS = 0, NEVER = 1 }.
+        // Our stored "hw-accel" setting uses the same two values. ALWAYS is the sane default for GPU
+        // compositing; clamp anything unexpected (including legacy 3-value settings) to ALWAYS.
+        WebKitHardwareAccelerationPolicy toHwAccelPolicy(int value)
+        {
+            return value == WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER ? WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER
+                                                                      : WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS;
+        }
 
         std::optional<std::string> getSystemLanguage()
         {
@@ -176,6 +185,14 @@ namespace wil::ui
                 webView->onLoadStatusChanged(loadEvent);
             }
         }
+
+        void webProcessTerminated(WebKitWebView*, WebKitWebProcessTerminationReason reason, gpointer userData)
+        {
+            if (auto const webView = reinterpret_cast<WebView*>(userData); webView)
+            {
+                webView->onWebProcessTerminated(reason);
+            }
+        }
     }
 
 
@@ -183,6 +200,8 @@ namespace wil::ui
         : Gtk::Widget{webkit_web_view_new()}
         , m_loadStatus{WEBKIT_LOAD_STARTED}
         , m_stoppedResponding{false}
+        , m_crashCount{0}
+        , m_lastCrashTime{0}
         , m_signalLoadStatus{}
         , m_signalNotification{}
         , m_signalNotificationClicked{}
@@ -192,10 +211,18 @@ namespace wil::ui
         auto configDir   = Glib::get_user_config_dir();
         auto cssFilePath = configDir + "/" + WIL_NAME + "/web.css";
 
+        // Persist cookies to disk (the default context keeps them in memory only, which
+        // contributes to random logouts). Stored alongside the rest of the app's web data.
+        auto const dataDir       = Glib::get_user_data_dir() + "/" + WIL_NAME;
+        auto const cookieStore   = dataDir + "/cookies.sqlite";
+        auto const cookieManager = webkit_web_context_get_cookie_manager(webContext);
+        webkit_cookie_manager_set_persistent_storage(cookieManager, cookieStore.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
+
         g_signal_connect(*this, "load-changed", G_CALLBACK(detail::loadChanged), this);
         g_signal_connect(*this, "permission-request", G_CALLBACK(permissionRequest), nullptr);
         g_signal_connect(*this, "decide-policy", G_CALLBACK(decidePolicy), nullptr);
         g_signal_connect(*this, "show-notification", G_CALLBACK(showNotification), this);
+        g_signal_connect(*this, "web-process-terminated", G_CALLBACK(detail::webProcessTerminated), this);
         g_signal_connect(webContext, "download-started", G_CALLBACK(downloadStarted), nullptr);
         g_signal_connect(webContext, "initialize-notification-permissions", G_CALLBACK(initializeNotificationPermission), nullptr);
         Glib::signal_timeout().connect(sigc::mem_fun(*this, &WebView::onTimeout), 5000);
@@ -210,7 +237,7 @@ namespace wil::ui
         auto const settings = webkit_web_view_get_settings(*this);
         webkit_settings_set_user_agent(settings, USER_AGENT);
         webkit_settings_set_enable_developer_extras(settings, TRUE);
-        auto hwAccelPolicy = static_cast<WebKitHardwareAccelerationPolicy>(util::Settings::getInstance().getValue<int>("web", "hw-accel", 1));
+        auto const hwAccelPolicy = toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
         webkit_settings_set_hardware_acceleration_policy(settings, hwAccelPolicy);
         webkit_settings_set_minimum_font_size(settings, util::Settings::getInstance().getValue<int>("web", "min-font-size", 0));
 
@@ -345,6 +372,34 @@ namespace wil::ui
     {
         m_loadStatus = loadEvent;
         m_signalLoadStatus.emit(m_loadStatus);
+    }
+
+    void WebView::onWebProcessTerminated(WebKitWebProcessTerminationReason reason)
+    {
+        if (reason == WEBKIT_WEB_PROCESS_TERMINATED_BY_API)
+        {
+            // We terminated it on purpose (e.g. the unresponsive-reload path or shutdown).
+            return;
+        }
+
+        char const* const reasonText = (reason == WEBKIT_WEB_PROCESS_EXCEEDED_MEMORY_LIMIT) ? "exceeded memory limit" : "crashed";
+        std::cerr << "WebView: Web process " << reasonText << "; recovering" << std::endl;
+
+        // Crash-loop guard: if the web process keeps dying in quick succession, back off so we
+        // don't busy-reload a permanently broken page.
+        auto const now = g_get_monotonic_time();
+        if (now - m_lastCrashTime < 10 * G_USEC_PER_SEC)
+        {
+            ++m_crashCount;
+        }
+        else
+        {
+            m_crashCount = 1;
+        }
+        m_lastCrashTime = now;
+
+        auto const delayMs = (m_crashCount > 3) ? 30000U : 1500U;
+        Glib::signal_timeout().connect_once([this] { webkit_web_view_reload(*this); }, delayMs);
     }
 
     bool WebView::onTimeout()

@@ -32,7 +32,7 @@
       <description>
         <p>Stable ${WIL_VERSION} release.</p>
       </description>
-      <url>https://github.com/xeco23/WasIstLos/releases/tag/v${WIL_VERSION}</url>
+      <url>https://github.com/Wahid7852/WasIstLos/releases/tag/v${WIL_VERSION}</url>
     </release>
   </releases>
 </component>

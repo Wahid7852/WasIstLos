@@ -8,6 +8,7 @@ namespace wil::ui
     namespace detail
     {
         void loadChanged(WebKitWebView*, WebKitLoadEvent loadEvent, gpointer userData);
+        void webProcessTerminated(WebKitWebView*, WebKitWebProcessTerminationReason reason, gpointer userData);
     }
 
     class WebView : public Gtk::Widget
@@ -37,14 +38,18 @@ namespace wil::ui
 
         private:
             void onLoadStatusChanged(WebKitLoadEvent loadEvent);
+            void onWebProcessTerminated(WebKitWebProcessTerminationReason reason);
             bool onTimeout();
             void applyCustomCss(const std::string& cssFilePath);
 
             friend void detail::loadChanged(WebKitWebView*, WebKitLoadEvent, gpointer);
+            friend void detail::webProcessTerminated(WebKitWebView*, WebKitWebProcessTerminationReason, gpointer);
 
         private:
             WebKitLoadEvent                     m_loadStatus;
             bool                                m_stoppedResponding;
+            int                                 m_crashCount;
+            gint64                              m_lastCrashTime;
             sigc::signal<void, WebKitLoadEvent> m_signalLoadStatus;
             sigc::signal<void, bool>            m_signalNotification;
             sigc::signal<void>                  m_signalNotificationClicked;

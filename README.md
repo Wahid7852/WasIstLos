@@ -14,10 +14,10 @@ An unofficial WhatsApp desktop application for Linux.
     </a>
 </p>
 
-[![Action Status](https://github.com/xeco23/WasIstLos/workflows/Linter/badge.svg)](https://github.com/xeco23/WasIstLos/actions/workflows/linter.yml)
-[![Action Status](https://github.com/xeco23/WasIstLos/workflows/Build/badge.svg)](https://github.com/xeco23/WasIstLos/actions/workflows/build.yml)
-[![Action Status](https://github.com/xeco23/WasIstLos/workflows/Install/badge.svg)](https://github.com/xeco23/WasIstLos/actions/workflows/install.yml)
-[![Action Status](https://github.com/xeco23/WasIstLos/workflows/Release/badge.svg)](https://github.com/xeco23/WasIstLos/actions/workflows/release.yml)
+[![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Linter/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/linter.yml)
+[![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Build/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/build.yml)
+[![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Install/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/install.yml)
+[![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Release/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/release.yml)
 [![POEditor](https://img.shields.io/badge/Translations-POEditor-brightgreen)](https://poeditor.com/join/project/jMGkxVn3vN)
 
 ![App Window](screenshot/app.png)
@@ -26,7 +26,7 @@ An unofficial WhatsApp desktop application for Linux.
 ## About
 
 WasIstLos is an unofficial WhatsApp desktop application written in C++ with the help of gtkmm and WebKitGtk libraries.
-Check out [wiki](https://github.com/xeco23/WasIstLos/wiki) for further details.
+Check out [wiki](https://github.com/Wahid7852/WasIstLos/wiki) for further details.
 
 
 ## Features
@@ -132,4 +132,4 @@ Please read [contributing](CONTRIBUTING.md).
 
 ### Code Contributors
 
-[![Code Contributors](https://opencollective.com/WasIstLos/contributors.svg?width=880&button=false)](https://github.com/xeco23/WasIstLos/graphs/contributors)
+[![Code Contributors](https://opencollective.com/WasIstLos/contributors.svg?width=880&button=false)](https://github.com/Wahid7852/WasIstLos/graphs/contributors)

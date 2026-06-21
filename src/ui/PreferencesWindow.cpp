@@ -37,7 +37,7 @@ namespace wil::ui
 
         refBuilder->get_widget("combobox_hw_accel", m_comboboxHwAccel);
         m_comboboxHwAccel->signal_changed().connect(sigc::mem_fun(*this, &PreferencesWindow::onHwAccelChanged));
-        m_comboboxHwAccel->append(_("On Demand"));
+        // Order matches WebKitHardwareAccelerationPolicy { ALWAYS = 0, NEVER = 1 } (webkit2gtk >= 2.40).
         m_comboboxHwAccel->append(_("Always"));
         m_comboboxHwAccel->append(_("Never"));
 
@@ -56,7 +56,8 @@ namespace wil::ui
         switchAutostart->set_state(util::Settings::getInstance().getValue<bool>("general", "autostart"));
         m_switchNotificationSounds->set_state(util::Settings::getInstance().getValue<bool>("general", "notification-sounds", true));
         switchPreferDarkTheme->set_state(util::Settings::getInstance().getValue<bool>("appearance", "prefer-dark-theme"));
-        m_comboboxHwAccel->set_active(util::Settings::getInstance().getValue<int>("web", "hw-accel", 1));
+        auto const hwAccel = util::Settings::getInstance().getValue<int>("web", "hw-accel", 0);
+        m_comboboxHwAccel->set_active(hwAccel > 1 ? 1 : hwAccel);
         switchAllowPermissions->set_state(util::Settings::getInstance().getValue<bool>("web", "allow-permissions"));
         spinMinFontSize->set_value(util::Settings::getInstance().getValue<int>("web", "min-font-size", 0));
     }
