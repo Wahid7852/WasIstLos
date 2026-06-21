@@ -54,12 +54,27 @@ namespace
         webkit_website_data_manager_set_memory_pressure_settings(settings);
         webkit_memory_pressure_settings_free(settings);
     }
+
+    // On this stack (Intel + WebKitGTK's GStreamer GL video sink under wlroots) hardware-decoded
+    // frames arrive as DMABuf/external-OES textures the GL sink cannot map ("Cannot map External OES
+    // textures"), so WhatsApp videos render glitched or not at all. Route video through a plain
+    // system-memory path: disable the GL video sink (WebKit falls back to an appsink the compositor
+    // reads) and derank the VA decoders so software decode produces mappable frames. The page's
+    // DMABUF *renderer*, which keeps typing/scrolling smooth, is a separate subsystem and stays on;
+    // this only adds CPU while a video is actually playing. Set here in the UI process before any web
+    // process is spawned so the child inherits them; an explicit user override of either is respected.
+    void applyVideoWorkarounds()
+    {
+        g_setenv("WEBKIT_GST_DISABLE_GL_SINK", "1", FALSE);
+        g_setenv("GST_PLUGIN_FEATURE_RANK", "vah264dec:NONE,vah265dec:NONE,vavp8dec:NONE,vavp9dec:NONE,vaav1dec:NONE", FALSE);
+    }
 }
 
 int main(int argc, char** argv)
 {
     argc = extractProfile(argc, argv);
 
+    applyVideoWorkarounds();
     applyMemoryPressureSettings();
 
     setlocale(LC_ALL, "");
