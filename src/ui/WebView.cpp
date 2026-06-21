@@ -247,7 +247,10 @@ namespace wil::ui
         // holding extra GPU contexts. Media/WebRTC stay enabled so voice/video calls keep working.
         webkit_settings_set_enable_webgl(settings, FALSE);
         webkit_settings_set_enable_2d_canvas_acceleration(settings, FALSE);
-        auto const hwAccelPolicy = toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
+        auto const lowGpuMode    = util::Settings::getInstance().getValue<bool>("web", "low-gpu-mode", false);
+        auto const hwAccelPolicy = lowGpuMode
+            ? WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER
+            : toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
         webkit_settings_set_hardware_acceleration_policy(settings, hwAccelPolicy);
         webkit_settings_set_minimum_font_size(settings, util::Settings::getInstance().getValue<int>("web", "min-font-size", 0));
 
@@ -284,6 +287,15 @@ namespace wil::ui
     void WebView::setHwAccelPolicy(WebKitHardwareAccelerationPolicy policy)
     {
         auto const settings = webkit_web_view_get_settings(*this);
+        webkit_settings_set_hardware_acceleration_policy(settings, policy);
+    }
+
+    void WebView::setLowGpuMode(bool enabled)
+    {
+        auto const settings = webkit_web_view_get_settings(*this);
+        auto const policy    = enabled
+            ? WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER
+            : toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
         webkit_settings_set_hardware_acceleration_policy(settings, policy);
     }
 

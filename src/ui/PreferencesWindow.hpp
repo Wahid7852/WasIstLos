@@ -23,6 +23,7 @@ namespace wil::ui
             bool onNotificationSoundsChanged(bool state) const;
             bool onPreferDarkThemeChanged(bool state) const;
             bool onAllowPermissionsChanged(bool state) const;
+            bool onLowGpuModeChanged(bool state) const;
             void onHwAccelChanged() const;
             void onMinFontSizeChanged(Gtk::SpinButton* spinButtonMinFontSize) const;
 
