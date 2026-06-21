@@ -43,28 +43,31 @@ namespace wil::util
     template<typename ValueType>
     inline void Settings::setValue(Glib::ustring const& group, Glib::ustring const& key, ValueType value)
     {
-        if ((group == "general") && (key == "autostart") && std::is_same_v<ValueType, bool>)
+        if constexpr (std::is_same_v<ValueType, bool>)
         {
-            setAutostart(value);
-        }
-        else
-        {
-            m_settingMap.setValue(group, key, value);
+            if ((group == "general") && (key == "autostart"))
+            {
+                setAutostart(value);
+                m_settingMap.saveToFile(m_configFilePath);
+                return;
+            }
         }
 
+        m_settingMap.setValue(group, key, value);
         m_settingMap.saveToFile(m_configFilePath);
     }
 
     template<typename ValueType>
     inline ValueType Settings::getValue(Glib::ustring const& group, Glib::ustring const& key, ValueType defaultValue)
     {
-        if ((group == "general") && (key == "autostart") && std::is_same_v<ValueType, bool>)
+        if constexpr (std::is_same_v<ValueType, bool>)
         {
-            return getAutostart();
+            if ((group == "general") && (key == "autostart"))
+            {
+                return getAutostart();
+            }
         }
-        else
-        {
-            return m_settingMap.getValue(group, key, defaultValue);
-        }
+
+        return m_settingMap.getValue(group, key, defaultValue);
     }
 }
