@@ -1,7 +1,5 @@
 #include <algorithm>
 #include <clocale>
-#include <cstdlib>
-#include <cstring>
 #include <string>
 #include <vector>
 #include <glibmm/i18n.h>
@@ -37,27 +35,6 @@ namespace
         wil::ui::Application::getInstance().quit();
     }
 
-    // WebKitGTK's DMABUF renderer is broken on wlroots-based Wayland compositors
-    // (Hyprland, Sway, river, ...) with Mesa, causing runaway GPU usage and frequent
-    // web-process crashes. GNOME (Mutter) and KDE (KWin) are unaffected, so only force
-    // the stable path on wlroots. Honour a user-provided value (overwrite = 0).
-    void applyWlrootsWorkarounds()
-    {
-        char const* const wayland = std::getenv("WAYLAND_DISPLAY");
-        if (!wayland || !*wayland)
-        {
-            return;
-        }
-
-        char const* const desktop      = std::getenv("XDG_CURRENT_DESKTOP");
-        bool const        isGnomeOrKde = desktop && (std::strstr(desktop, "GNOME") || std::strstr(desktop, "KDE") || std::strstr(desktop, "Plasma"));
-
-        if (!isGnomeOrKde)
-        {
-            setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", 0);
-        }
-    }
-
     // Bound the web process so a long-running WhatsApp Web session releases caches and
     // gets garbage-collected instead of ballooning to several GB. Must be configured
     // before the first web context (i.e. the first WebView) is created.
@@ -82,7 +59,6 @@ int main(int argc, char** argv)
 {
     argc = extractProfile(argc, argv);
 
-    applyWlrootsWorkarounds();
     applyMemoryPressureSettings();
 
     setlocale(LC_ALL, "");
