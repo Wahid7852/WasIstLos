@@ -1,11 +1,36 @@
 #include "Application.hpp"
+#include <algorithm>
+#include <cctype>
 #include <gtkmm/window.h>
 #include <gtkmm/settings.h>
 #include "Config.hpp"
+#include "../util/Profile.hpp"
 #include "../util/Settings.hpp"
 
 namespace wil::ui
 {
+    namespace
+    {
+        // A per-profile application id keeps each account a distinct single-instance app, so
+        // multiple profiles run side by side. Sanitised to a valid D-Bus name segment.
+        Glib::ustring applicationId()
+        {
+            if (util::profileName().empty())
+            {
+                return WIL_APP_ID;
+            }
+
+            auto suffix = util::profileName();
+            std::replace_if(suffix.begin(), suffix.end(), [](char c) { return !std::isalnum(static_cast<unsigned char>(c)); }, '_');
+            if (std::isdigit(static_cast<unsigned char>(suffix.front())))
+            {
+                suffix.insert(suffix.begin(), '_');
+            }
+
+            return Glib::ustring{WIL_APP_ID "."} + suffix;
+        }
+    }
+
     Application* Application::m_instance = nullptr;
 
     Application& Application::getInstance()
@@ -14,7 +39,7 @@ namespace wil::ui
     }
 
     Application::Application(int argc, char** argv)
-        : Gtk::Application{argc, argv, WIL_APP_ID, Gio::APPLICATION_HANDLES_OPEN}
+        : Gtk::Application{argc, argv, applicationId(), Gio::APPLICATION_HANDLES_OPEN}
         , m_onHold{false}
         , m_mainWindow{nullptr}
     {

@@ -3,6 +3,7 @@
 #include <glibmm/miscutils.h>
 #include <giomm/file.h>
 #include "Config.hpp"
+#include "Profile.hpp"
 
 namespace wil::util
 {
@@ -15,7 +16,7 @@ namespace wil::util
     Settings::Settings()
         : m_settingMap{}
         , m_configDir{Glib::get_user_config_dir()}
-        , m_configAppDir{m_configDir + "/" WIL_NAME}
+        , m_configAppDir{m_configDir + "/" WIL_NAME + profilePathSuffix()}
         , m_configFilePath{m_configAppDir + "/settings.conf"}
         , m_autostartDesktopFilePath{m_configDir + "/autostart/" WIL_APP_ID ".desktop"}
     {
@@ -23,7 +24,7 @@ namespace wil::util
         {
             if (auto configDir = Gio::File::create_for_path(m_configAppDir); !configDir->query_exists())
             {
-                if (!configDir->make_directory())
+                if (!configDir->make_directory_with_parents())
                 {
                     std::cerr << "Settings: Failed to create config directory" << std::endl;
                     return;

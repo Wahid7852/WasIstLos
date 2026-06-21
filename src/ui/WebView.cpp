@@ -10,6 +10,7 @@
 #include <glibmm/miscutils.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/filechooserdialog.h>
+#include "../util/Profile.hpp"
 #include "../util/Settings.hpp"
 #include "Config.hpp"
 
@@ -18,7 +19,25 @@ namespace wil::ui
     namespace
     {
         constexpr auto const WHATSAPP_WEB_URI = "https://web.whatsapp.com";
-        constexpr auto const USER_AGENT       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
+
+        // Default profile uses WebKit's shared default context (so existing sessions are
+        // untouched); a named profile gets an isolated data manager under its own directory.
+        GtkWidget* makeWebView()
+        {
+            if (util::profileName().empty())
+            {
+                return webkit_web_view_new();
+            }
+
+            auto const dataDir  = Glib::get_user_data_dir() + "/" WIL_NAME + util::profilePathSuffix();
+            auto const cacheDir = Glib::get_user_cache_dir() + "/" WIL_NAME + util::profilePathSuffix();
+            g_mkdir_with_parents(dataDir.c_str(), 0700);
+
+            auto* const manager = webkit_website_data_manager_new("base-data-directory", dataDir.c_str(), "base-cache-directory", cacheDir.c_str(), nullptr);
+            auto* const context = webkit_web_context_new_with_website_data_manager(manager);
+            return webkit_web_view_new_with_context(context);
+        }
+        constexpr auto const USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
 
         // webkit2gtk >= 2.40 dropped the ON_DEMAND policy; the enum is now { ALWAYS = 0, NEVER = 1 }.
         // Our stored "hw-accel" setting uses the same two values. ALWAYS is the sane default for GPU
@@ -213,7 +232,7 @@ namespace wil::ui
 
 
     WebView::WebView()
-        : Gtk::Widget{webkit_web_view_new()}
+        : Gtk::Widget{makeWebView()}
         , m_loadStatus{WEBKIT_LOAD_STARTED}
         , m_stoppedResponding{false}
         , m_crashCount{0}
@@ -232,7 +251,7 @@ namespace wil::ui
 
         // Persist cookies to disk (the default context keeps them in memory only, which
         // contributes to random logouts). Stored alongside the rest of the app's web data.
-        auto const dataDir       = Glib::get_user_data_dir() + "/" + WIL_NAME;
+        auto const dataDir       = Glib::get_user_data_dir() + "/" + WIL_NAME + util::profilePathSuffix();
         auto const cookieStore   = dataDir + "/cookies.sqlite";
         auto const cookieManager = webkit_web_context_get_cookie_manager(webContext);
         webkit_cookie_manager_set_persistent_storage(cookieManager, cookieStore.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);

@@ -1,14 +1,37 @@
+#include <algorithm>
 #include <clocale>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <vector>
 #include <glibmm/i18n.h>
 #include <webkit2/webkit2.h>
 #include "Config.hpp"
 #include "ui/Application.hpp"
 #include "util/Helper.hpp"
+#include "util/Profile.hpp"
 
 namespace
 {
+    // Consume "--profile <name>" (so multiple accounts can run side by side) before GTK parses
+    // the arguments, compacting it out of argv. Returns the remaining argument count.
+    int extractProfile(int argc, char** argv)
+    {
+        auto remaining = std::vector<char*>{};
+        for (int i = 0; i < argc; ++i)
+        {
+            if (std::string{argv[i]} == "--profile" && i + 1 < argc)
+            {
+                wil::util::profileName() = argv[++i];
+                continue;
+            }
+            remaining.push_back(argv[i]);
+        }
+
+        std::copy(remaining.begin(), remaining.end(), argv);
+        return static_cast<int>(remaining.size());
+    }
+
     void sigterm(int)
     {
         wil::ui::Application::getInstance().quit();
@@ -57,6 +80,8 @@ namespace
 
 int main(int argc, char** argv)
 {
+    argc = extractProfile(argc, argv);
+
     applyWlrootsWorkarounds();
     applyMemoryPressureSettings();
 
