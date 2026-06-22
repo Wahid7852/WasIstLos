@@ -67,6 +67,10 @@ namespace
     {
         g_setenv("WEBKIT_GST_DISABLE_GL_SINK", "1", FALSE);
         g_setenv("GST_PLUGIN_FEATURE_RANK", "vah264dec:NONE,vah265dec:NONE,vavp8dec:NONE,vavp9dec:NONE,vaav1dec:NONE", FALSE);
+
+        // Keep GStreamer at error level by default so it can't flood the logger; only set when the
+        // user hasn't asked for verbose output, so an explicit GST_DEBUG is still honored.
+        g_setenv("GST_DEBUG", "1", FALSE);
     }
 }
 
