@@ -39,8 +39,8 @@ namespace wil::util
             return std::nullopt;
         }
 
-        // Region-capture commands per desktop, in priority order. Each writes a PNG to `path`.
-        // The commands use shell features ($(...), redirection) so they run via the shell.
+        // Region-capture commands per desktop, in priority order; each writes a PNG to `path`
+        // and runs via the shell (they use $(...) / redirection).
         auto const tools = std::vector<std::pair<std::string, std::string>>{
             {"spectacle", "spectacle -rbno '" + path + "'"},                // KDE
             {"grim", "grim -g \"$(slurp)\" '" + path + "'"},                // wlroots (Sway/Hyprland)
@@ -69,8 +69,7 @@ namespace wil::util
                 return path;
             }
 
-            // Tool present but the capture failed or was cancelled: don't fall through to a
-            // different tool (that would pop a second region selector), just give up.
+            // Capture failed or was cancelled; don't try another tool (it would re-prompt).
             ::unlink(path.c_str());
             return std::nullopt;
         }

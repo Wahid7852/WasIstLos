@@ -255,8 +255,7 @@ namespace wil::ui
         auto const cookieManager = webkit_web_context_get_cookie_manager(webContext);
         webkit_cookie_manager_set_persistent_storage(cookieManager, cookieStore.c_str(), WEBKIT_COOKIE_PERSISTENT_STORAGE_SQLITE);
 
-        // Use the web-browser cache model so WhatsApp's static assets are kept on disk and warm
-        // reloads (after a crash-recovery or a manual refresh) don't refetch the whole SPA.
+        // Keep assets on disk so reloads don't refetch the whole SPA.
         webkit_web_context_set_cache_model(webContext, WEBKIT_CACHE_MODEL_WEB_BROWSER);
 
         g_signal_connect(*this, "load-changed", G_CALLBACK(detail::loadChanged), this);
@@ -364,10 +363,8 @@ namespace wil::ui
 
     bool WebView::pasteClipboardImage()
     {
-        // WebKitGTK only hands text from the clipboard to the page's paste event, never images,
-        // so a copied screenshot never reaches WhatsApp's composer. Bridge it ourselves: if the
-        // clipboard holds an image, inject it; otherwise report "not handled" so normal text paste
-        // still runs.
+        // WebKitGTK never delivers clipboard images to the page's paste event, so inject them
+        // ourselves. Return false when there's no image so normal text paste still runs.
         auto const clipboard = Gtk::Clipboard::get();
         if (!clipboard->wait_is_image_available())
         {
@@ -386,10 +383,8 @@ namespace wil::ui
 
     void WebView::wrapSelection(std::string const& prefix, std::string const& suffix)
     {
-        // Surround the current selection with WhatsApp markdown markers. execCommand('insertText')
-        // fires the beforeinput/input events WhatsApp's editor listens for, so the change registers
-        // (a direct DOM edit would be ignored). With no selection, insert the empty pair and park
-        // the caret between the markers so the user can type the formatted text.
+        // execCommand('insertText') fires the input events WhatsApp's editor needs; a direct DOM
+        // edit would be ignored. With no selection, drop the empty pair and park the caret inside.
         auto const esc = [](std::string const& s)
         {
             auto out = std::string{};
@@ -420,8 +415,7 @@ namespace wil::ui
 
     void WebView::clearFormatting()
     {
-        // Strip WhatsApp markdown markers (``` then * _ ~) from the selection and re-insert the
-        // plain text via execCommand so the editor registers the change.
+        // Strip the markdown markers (``` then * _ ~) from the selection.
         static char const* const script = "(function(){var sel=window.getSelection();if(!sel)return;var text=sel.toString();"
                                           "if(text.length===0)return;"
                                           "document.execCommand('insertText',false,text.replace(/```/g,'').replace(/[*_~]/g,''));})();";
@@ -451,9 +445,8 @@ namespace wil::ui
         auto const base64 = Glib::Base64::encode(std::string(buffer, bufferSize));
         g_free(buffer);
 
-        // Reconstruct the PNG as a File inside a DataTransfer and dispatch a synthetic paste event
-        // on the focused composer, which is what WhatsApp listens for to open its media preview.
-        // Some WebKit builds leave a constructed ClipboardEvent's clipboardData null, so force it.
+        // Hand the PNG to the composer as a File in a synthetic paste event (forcing clipboardData,
+        // which some WebKit builds leave null on a constructed ClipboardEvent).
         auto script = std::string{};
         script.append("(function(){var b64=\"");
         script.append(base64);
@@ -602,12 +595,8 @@ namespace wil::ui
 
     void WebView::injectCrashRecoveryScript()
     {
-        // WhatsApp Web's JS can crash inside an otherwise healthy web process and show its own
-        // error screen ("We encountered a problem running WhatsApp. Please reload..."). The native
-        // web-process-terminated handler never fires for that, so recover from the page side: poll
-        // for the phrase and reload. A sessionStorage budget (3 reloads / 60s) mirrors the native
-        // crash-loop backoff so a permanently broken page doesn't busy-reload. Keys on the English
-        // phrase, which is the pragmatic signal for the reported case.
+        // WhatsApp's own crash screen doesn't trip the native web-process handler, so recover from
+        // the page side: poll for the error phrase and reload, capped at 3 reloads / 60s.
         static char const* const source = R"JS(
         (function() {
             var PHRASE = "We encountered a problem running WhatsApp";
@@ -620,9 +609,7 @@ namespace wil::ui
                 } catch (e) { return []; }
             }
             setInterval(function() {
-                // textContent, not innerText: innerText forces a full synchronous reflow every
-                // tick (it returns *rendered* text), which stutters WhatsApp's large DOM. textContent
-                // just walks nodes and still contains the crash phrase.
+                // textContent (not innerText) to avoid forcing a reflow on every tick.
                 if (!document.body || document.body.textContent.indexOf(PHRASE) === -1) return;
                 var times = recent();
                 if (times.length >= 3) return;
@@ -641,12 +628,9 @@ namespace wil::ui
 
     void WebView::injectCtrlEnterSendScript()
     {
-        // Optional Telegram-style composer behavior: Enter inserts a newline, Ctrl+Enter sends.
-        // Off unless window.__wilCtrlEnterSend is set (seeded from the preference on every load,
-        // see onLoadStatusChanged, and updated live by setCtrlEnterSend). We remap by replaying a
-        // trusted-looking Enter: Shift+Enter for a newline, plain Enter to send. The handler ignores
-        // synthetic (untrusted) events so it never recurses. Depends on WhatsApp's composer
-        // internals, so it is the most fragile feature and stays opt-in.
+        // Opt-in (window.__wilCtrlEnterSend, seeded per load in onLoadStatusChanged): make Enter a
+        // newline and Ctrl+Enter send, by replaying the opposite Enter. Ignores synthetic events so
+        // it never recurses.
         static char const* const source = R"JS(
         (function() {
             document.addEventListener('keydown', function(e) {
