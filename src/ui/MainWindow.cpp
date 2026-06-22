@@ -130,6 +130,17 @@ namespace wil::ui
                     onZoomOut();
                     return true;
 
+                case GDK_KEY_v:
+                case GDK_KEY_V:
+                    // Ctrl+V / Ctrl+Shift+V: paste a clipboard image into the composer. Only
+                    // consume the event when an image was actually pasted; otherwise fall through
+                    // so WhatsApp's normal text paste keeps working.
+                    if (m_webView.pasteClipboardImage())
+                    {
+                        return true;
+                    }
+                    break;
+
                 default:
                     break;
             }

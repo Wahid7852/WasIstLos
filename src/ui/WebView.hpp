@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gdkmm/pixbuf.h>
 #include <gtkmm/widget.h>
 #include <webkit2/webkit2.h>
 
@@ -27,6 +28,8 @@ namespace wil::ui
             void            setTheme(int index);
             void            sendRequest(std::string url);
             void            openPhoneNumber(std::string const& phoneNumber);
+            bool            pasteClipboardImage();
+            void            pasteImage(Glib::RefPtr<Gdk::Pixbuf> const& pixbuf);
             void            zoomIn();
             void            zoomOut();
             void            resetZoom();

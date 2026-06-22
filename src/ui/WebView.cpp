@@ -5,9 +5,11 @@
 #include <streambuf>
 #include <optional>
 #include <locale>
+#include <glibmm/base64.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
 #include <glibmm/miscutils.h>
+#include <gtkmm/clipboard.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/filechooserdialog.h>
 #include "../util/Profile.hpp"
@@ -357,6 +359,68 @@ namespace wil::ui
     void WebView::openPhoneNumber(std::string const& phoneNumber)
     {
         sendRequest("whatsapp://send?phone=" + phoneNumber);
+    }
+
+    bool WebView::pasteClipboardImage()
+    {
+        // WebKitGTK only hands text from the clipboard to the page's paste event, never images,
+        // so a copied screenshot never reaches WhatsApp's composer. Bridge it ourselves: if the
+        // clipboard holds an image, inject it; otherwise report "not handled" so normal text paste
+        // still runs.
+        auto const clipboard = Gtk::Clipboard::get();
+        if (!clipboard->wait_is_image_available())
+        {
+            return false;
+        }
+
+        auto const pixbuf = clipboard->wait_for_image();
+        if (!pixbuf)
+        {
+            return false;
+        }
+
+        pasteImage(pixbuf);
+        return true;
+    }
+
+    void WebView::pasteImage(Glib::RefPtr<Gdk::Pixbuf> const& pixbuf)
+    {
+        if (!pixbuf)
+        {
+            return;
+        }
+
+        gchar* buffer    = nullptr;
+        gsize bufferSize = 0;
+        try
+        {
+            pixbuf->save_to_buffer(buffer, bufferSize, "png");
+        }
+        catch (Glib::Error const& error)
+        {
+            std::cerr << "WebView: Failed to encode image for paste: " << error.what() << std::endl;
+            return;
+        }
+
+        auto const base64 = Glib::Base64::encode(std::string(buffer, bufferSize));
+        g_free(buffer);
+
+        // Reconstruct the PNG as a File inside a DataTransfer and dispatch a synthetic paste event
+        // on the focused composer, which is what WhatsApp listens for to open its media preview.
+        // Some WebKit builds leave a constructed ClipboardEvent's clipboardData null, so force it.
+        auto script = std::string{};
+        script.append("(function(){var b64=\"");
+        script.append(base64);
+        script.append("\";var bin=atob(b64);var n=bin.length;var bytes=new Uint8Array(n);"
+                      "for(var i=0;i<n;i++)bytes[i]=bin.charCodeAt(i);"
+                      "var file=new File([new Blob([bytes],{type:'image/png'})],'image.png',{type:'image/png'});"
+                      "var dt=new DataTransfer();dt.items.add(file);"
+                      "var t=document.activeElement||document.body;"
+                      "var ev=new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true});"
+                      "try{Object.defineProperty(ev,'clipboardData',{value:dt});}catch(e){}"
+                      "t.dispatchEvent(ev);})();");
+
+        webkit_web_view_evaluate_javascript(*this, script.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
     }
 
     void WebView::zoomIn()
