@@ -1,7 +1,7 @@
-Source: wasistlos
+Source: yawf
 Section: web
 Priority: optional
-Maintainer: Enes Hecan <nshecan@gmail.com>
+Maintainer: Wahid7852 <wahidzk0091@gmail.com>
 Build-Depends: cmake,
                debhelper (>=10),
                intltool,
@@ -14,7 +14,7 @@ Standards-Version: 4.5.1
 Homepage: https://github.com/Wahid7852/WasIstLos
 Rules-Requires-Root: no
 
-Package: wasistlos
+Package: yawf
 Architecture: any
 Depends: glib-networking,
          gstreamer1.0-libav,

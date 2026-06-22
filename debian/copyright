@@ -1,10 +1,11 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: wasistlos
+Upstream-Name: yawf
 Upstream-Contact: https://github.com/Wahid7852/WasIstLos/issues
 Source: https://github.com/Wahid7852/WasIstLos
 
 Files: *
-Copyright: 2020 Enes Hecan <nshecan@gmail.com>
+Copyright: 2020-2022 Enes Hecan <nshecan@gmail.com>
+           2026 Wahid7852 <wahidzk0091@gmail.com>
 License: GPL-3.0
 
 GNU GENERAL PUBLIC LICENSE
