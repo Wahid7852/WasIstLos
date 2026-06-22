@@ -1,24 +1,23 @@
-# WasIstLos
+# YAWF
 
-An unofficial WhatsApp desktop application for Linux — a maintained revival fork
-of [xeco23/WasIstLos](https://github.com/xeco23/WasIstLos), written in C++ with
-gtkmm and WebKitGTK.
+**Y**et **A**nother **W**hatsApp **F**ork — an unofficial WhatsApp desktop client
+for Linux, written in C++ with gtkmm and WebKitGTK. A maintained fork of
+[xeco23/WasIstLos](https://github.com/xeco23/WasIstLos).
 
 ![App Window](screenshot/app.png)
 
 [![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Linter/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/linter.yml)
 [![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Build/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/build.yml)
-[![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Install/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/install.yml)
 [![Action Status](https://github.com/Wahid7852/WasIstLos/workflows/Release/badge.svg)](https://github.com/Wahid7852/WasIstLos/actions/workflows/release.yml)
 
 
 ## About
 
-WasIstLos wraps WhatsApp Web in a native WebKitGTK window and adds desktop
-integration (tray, notifications, autostart) plus a set of power-user features
-you don't get in the browser. This fork focuses on **reliability** (it recovers
-on its own when WhatsApp Web crashes) and **productivity** (clipboard image
-paste, Telegram-style formatting shortcuts, screenshot-to-chat).
+YAWF wraps WhatsApp Web in a native WebKitGTK window and adds desktop integration
+(tray, notifications, autostart) plus a set of power-user features you don't get
+in the browser. It focuses on **reliability** (it recovers on its own when
+WhatsApp Web crashes) and **productivity** (clipboard image paste, Telegram-style
+formatting shortcuts, screenshot-to-chat).
 
 
 ## Features
@@ -62,11 +61,18 @@ paste, Telegram-style formatting shortcuts, screenshot-to-chat).
 The full list is always available in-app via *Ctrl+?*.
 
 
-## Using WasIstLos
+## Install
 
-The upstream project is available from a number of Linux distributions:
+Grab a `.deb`, `.AppImage`, or `.snap` from the
+[Releases](https://github.com/Wahid7852/WasIstLos/releases) page, or use a package
+channel:
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/wasistlos.svg)](https://repology.org/project/wasistlos/versions)
+* **Arch (AUR)**: `yay -S yawf` — packaging in [`packaging/aur`](packaging/aur)
+* **Flatpak / Flathub**: manifest in [`flatpak`](flatpak) *(submission in progress)*
+* **Snap**: `snap install yawf` *(publishing in progress)*
+
+> Migrating from WasIstLos? On first launch YAWF copies your existing
+> `wasistlos` config, session and settings over, so you stay logged in.
 
 
 ## Dependencies
@@ -84,8 +90,6 @@ The upstream project is available from a number of Linux distributions:
 
 ## Build & Run
 
-### Development
-
 ```bash
 # Create a debug build directory and go into it
 mkdir -p build/debug && cd build/debug
@@ -94,11 +98,8 @@ mkdir -p build/debug && cd build/debug
 cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr ../..
 make -j4
 
-# Optionally, to update the default translation file
-make update-translation
-
 # Run
-./wasistlos
+./yawf
 ```
 
 > [!NOTE]
@@ -109,65 +110,50 @@ make update-translation
 ### Local installation
 
 ```bash
-# Run inside the build directory once the application is built
-# You'll probably need administrator privileges for this
+# Run inside the build directory once the application is built (needs root)
 make install
 ```
 
 > [!TIP]
-> If a distro package already owns `/usr/bin/wasistlos` and you don't want a
-> system upgrade to overwrite your build, install to `/usr/local` instead
+> To keep a distro package from overwriting your build, install to `/usr/local`
 > (configure with `-DCMAKE_INSTALL_PREFIX=/usr/local`). It wins on `PATH` and
 > `XDG_DATA_DIRS`, and your package manager never touches `/usr/local`.
-
-### Uninstall
-
-```bash
-# Run inside the build directory if you want to uninstall all files
-# install_manifest.txt file is created when you run make install
-xargs rm < install_manifest.txt
-```
 
 
 ## Packaging
 
-### Debian
+See [`RELEASING.md`](RELEASING.md) for how a release is cut and shipped to each
+channel. The `debian/`, `snap/`, `appimage/`, `packaging/aur/` and `flatpak/`
+directories hold the per-channel recipes.
 
-```bash
-# Don't forget to update the version number (0) in debian/changelog before this
-# Build the package.
-dpkg-buildpackage -uc -us -ui
-```
 
-### Snap
+## Roadmap / To-Do
 
-```bash
-# Build the package. Pass --use-lxd option in a virtual environment
-snapcraft
-```
-
-### AppImage
-
-```bash
-# Make sure that the application is installed into the `<Project Root>/AppDir` directory
-make install DESTDIR=../../AppDir
-
-# Build the package
-appimage-builder --skip-test --recipe ./appimage/AppImageBuilder.yml
-```
+* Publish to Flathub and the Snap Store; submit/maintain the AUR package
+* Debian/Ubuntu PPA for easy `apt` installs
+* Translate the new UI strings (formatting shortcuts, preferences) into all locales
+* Optional global hotkey to show/hide the window from the tray
+* Per-chat notification controls and quiet hours
+* Theme polish and a few more built-in themes
+* CI: validate the `.desktop` and AppStream metainfo on every PR
+* Automated snap/flatpak build checks in CI
 
 
 ## Contributing
 
 Please read [contributing](CONTRIBUTING.md).
 
-### Code Contributors
+### Contributors
 
-[![Code Contributors](https://opencollective.com/WasIstLos/contributors.svg?width=880&button=false)](https://github.com/Wahid7852/WasIstLos/graphs/contributors)
+* [Wahid7852](https://github.com/Wahid7852) — maintainer of this fork
+* [xeco23 (Enes Hecan)](https://github.com/xeco23) and the original WasIstLos
+  [contributors](https://github.com/xeco23/WasIstLos/graphs/contributors)
+
+[![Code Contributors](https://contrib.rocks/image?repo=Wahid7852/WasIstLos)](https://github.com/Wahid7852/WasIstLos/graphs/contributors)
 
 
 ## Credits
 
-This is a fork of the original [WasIstLos](https://github.com/xeco23/WasIstLos)
-by [xeco23](https://github.com/xeco23) and contributors. All credit for the
-original application goes to them.
+YAWF is a fork of the original [WasIstLos](https://github.com/xeco23/WasIstLos)
+by [xeco23 (Enes Hecan)](https://github.com/xeco23) and contributors. All credit
+for the original application goes to them. Licensed under GPL-3.0.
