@@ -442,7 +442,7 @@ namespace wil::ui
 
         aboutDialog.set_title(_("About"));
         aboutDialog.set_version(WIL_VERSION);
-        aboutDialog.set_program_name(_("WasIstLos"));
+        aboutDialog.set_program_name(WIL_FRIENDLY_NAME);
         aboutDialog.set_comments(_("An unofficial WhatsApp desktop application for Linux"));
         aboutDialog.set_website(WIL_HOMEPAGE);
         aboutDialog.set_website_label(_("GitHub Repository"));

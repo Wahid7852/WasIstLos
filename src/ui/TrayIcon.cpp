@@ -10,19 +10,19 @@ namespace wil::ui
     {
         std::pair<char const*, char const*> getTrayIconNames()
         {
-            constexpr auto WHATSAPP_TRAY            = "whatsapp-tray";
-            constexpr auto WHATSAPP_TRAY_ATTENTION  = "whatsapp-tray-attention";
-            constexpr auto WASISTLOS_TRAY           = WIL_ICON "-tray";
-            constexpr auto WASISTLOS_TRAY_ATTENTION = WIL_ICON "-tray-attention";
+            constexpr auto WHATSAPP_TRAY           = "whatsapp-tray";
+            constexpr auto WHATSAPP_TRAY_ATTENTION = "whatsapp-tray-attention";
+            constexpr auto APP_TRAY                = WIL_ICON "-tray";
+            constexpr auto APP_TRAY_ATTENTION      = WIL_ICON "-tray-attention";
 
             auto const iconTheme = Gtk::IconTheme::get_default();
             if (iconTheme->has_icon(WHATSAPP_TRAY) && iconTheme->has_icon(WHATSAPP_TRAY_ATTENTION))
             {
                 return {WHATSAPP_TRAY, WHATSAPP_TRAY_ATTENTION};
             }
-            else if (iconTheme->has_icon(WASISTLOS_TRAY) && iconTheme->has_icon(WASISTLOS_TRAY_ATTENTION))
+            else if (iconTheme->has_icon(APP_TRAY) && iconTheme->has_icon(APP_TRAY_ATTENTION))
             {
-                return {WASISTLOS_TRAY, WASISTLOS_TRAY_ATTENTION};
+                return {APP_TRAY, APP_TRAY_ATTENTION};
             }
             else
             {
