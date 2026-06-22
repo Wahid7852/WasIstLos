@@ -2,11 +2,11 @@ version: 1
 AppDir:
   path: ./AppDir
   app_info:
-    id: com.github.xeco23.WasIstLos
-    name: wasistlos
-    icon: com.github.xeco23.WasIstLos
+    id: io.github.wahid7852.YAWF
+    name: yawf
+    icon: io.github.wahid7852.YAWF
     version: !ENV ${RELEASE_VERSION}
-    exec: usr/bin/wasistlos
+    exec: usr/bin/yawf
     exec_args: $@
   after_bundle: |
     # Binary patch absolute paths in libwebkit files

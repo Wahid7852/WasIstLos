@@ -1,28 +1,26 @@
-name: wasistlos
-base: core20
+name: yawf
+base: core22
 grade: stable
 confinement: strict
-adopt-info: wasistlos
+adopt-info: yawf
 license: GPL-3.0
 website: https://github.com/Wahid7852/WasIstLos
-icon: resource/image/icons/hicolor/256x256/apps/com.github.xeco23.WasIstLos.png
+icon: resource/image/icons/hicolor/256x256/apps/io.github.wahid7852.YAWF.png
 
 architectures:
   - build-on: [amd64]
     run-on: [amd64]
   - build-on: [arm64]
     run-on: [arm64]
-  - build-on: [armhf]
-    run-on: [armhf]
 
 parts:
-  wasistlos:
+  yawf:
     source-type: local
     source: .
     plugin: cmake
     override-pull: |
-      snapcraftctl pull
-      sed -i.bak -e 's|Icon=${WIL_ICON}|Icon=usr/local/share/icons/hicolor/256x256/apps/com.github.xeco23.WasIstLos.png|g' resource/desktop/com.github.xeco23.WasIstLos.desktop.in
+      craftctl default
+      sed -i.bak -e 's|Icon=${WIL_ICON}|Icon=usr/local/share/icons/hicolor/256x256/apps/io.github.wahid7852.YAWF.png|g' resource/desktop/io.github.wahid7852.YAWF.desktop.in
     cmake-parameters:
       - -DCMAKE_BUILD_TYPE=Release
     build-packages:
@@ -30,59 +28,32 @@ parts:
       - libcanberra-dev
       - libsigc++-2.0-dev
       - libgtkmm-3.0-dev
-      - libwebkit2gtk-4.0-dev
+      - libwebkit2gtk-4.1-dev
       - libayatana-appindicator3-dev
     stage-packages:
-      - libwebkit2gtk-4.0-37
+      - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
       - glib-networking
       - libglu1-mesa
-      - freeglut3
       - gstreamer1.0-plugins-base
       - gstreamer1.0-plugins-good
       - gstreamer1.0-plugins-bad
       - gstreamer1.0-libav
     parse-info:
-      - resource/com.github.xeco23.WasIstLos.appdata.xml
-
-  cleanup:
-    after: [wasistlos]
-    plugin: nil
-    build-snaps: [core20, gnome-3-38-2004, gtk-common-themes]
-    override-prime: |
-      set -eux
-      for snap in "core20" "gnome-3-38-2004" "gtk-common-themes"; do
-        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" "$SNAPCRAFT_PRIME/usr/{}" \;
-      done
-      for CRUFT in bug lintian man; do
-        rm -rf $SNAPCRAFT_PRIME/usr/share/$CRUFT
-      done
-      find $SNAPCRAFT_PRIME/usr/share/doc/ -type f -not -name 'copyright' -delete
-      find $SNAPCRAFT_PRIME/usr/share -type d -empty -delete
-
-  gnome-3-38-extension:
-    build-packages:
-      - gcc
-    build-snaps:
-      - gnome-3-38-2004-sdk/latest/stable
-    make-parameters:
-      - WITH_PYTHON=3.8
-      - PLATFORM_PLUG=gnome-3-38-2004
-    plugin: make
-    source: $SNAPCRAFT_EXTENSIONS_DIR/desktop
-    source-subdir: gnome
+      - resource/io.github.wahid7852.YAWF.metainfo.xml
 
 slots:
   dbus-app:
     interface: dbus
     bus: session
-    name: com.github.xeco23.WasIstLos
+    name: io.github.wahid7852.YAWF
 
 apps:
-  wasistlos:
-    command: usr/local/bin/wasistlos
-    desktop: usr/local/share/applications/com.github.xeco23.WasIstLos.desktop
-    common-id: com.github.xeco23.WasIstLos
+  yawf:
+    command: usr/local/bin/yawf
+    extensions: [gnome]
+    common-id: io.github.wahid7852.YAWF
+    desktop: usr/local/share/applications/io.github.wahid7852.YAWF.desktop
     plugs:
       - desktop
       - desktop-legacy
@@ -106,47 +77,6 @@ apps:
       - screen-inhibit-control
     slots:
       - dbus-app
-    command-chain:
-      - snap/command-chain/desktop-launch
 
 assumes:
-  - snapd2.43
-
-plugs:
-  desktop:
-    mount-host-font-cache: false
-  gnome-3-38-2004:
-    default-provider: gnome-3-38-2004
-    interface: content
-    target: $SNAP/gnome-platform
-  gtk-3-themes:
-    default-provider: gtk-common-themes
-    interface: content
-    target: $SNAP/data-dir/themes
-  icon-themes:
-    default-provider: gtk-common-themes
-    interface: content
-    target: $SNAP/data-dir/icons
-  sound-themes:
-    default-provider: gtk-common-themes
-    interface: content
-    target: $SNAP/data-dir/sounds
-
-environment:
-  GTK_USE_PORTAL: '1'
-  SNAP_DESKTOP_RUNTIME: $SNAP/gnome-platform
-
-hooks:
-  configure:
-    command-chain:
-      - snap/command-chain/hooks-configure-desktop
-    plugs:
-      - desktop
-
-layout:
-  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0:
-    bind: $SNAP/gnome-platform/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.0
-  /usr/share/libdrm:
-    bind: $SNAP/gnome-platform/usr/share/libdrm
-  /usr/share/xml/iso-codes:
-    bind: $SNAP/gnome-platform/usr/share/xml/iso-codes
+  - snapd2.55
