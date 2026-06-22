@@ -48,7 +48,7 @@ jobs:
         id: appimage
         uses: AppImageCrafters/build-appimage@fe2205a4d6056be47051f7b1b3811106e9814910
         with:
-          recipe: "./appimage/AppImageBuilder.yml"
+          recipe: "./packaging/appimage/AppImageBuilder.yml"
         env:
           UPDATE_INFO: gh-releases-zsync|Wahid7852|WasIstLos|${{ env.RELEASE_VERSION }}|*x86_64.AppImage.zsync
 

@@ -25,7 +25,7 @@ package metadata derives from it.
 * **Snap Store** — register the `yawf` name once (`snapcraft register yawf`), then
   `snapcraft` + `snapcraft upload --release=stable *.snap`. The snap uses
   `base: core22` (required for webkit2gtk-4.1); test-build before the first upload.
-* **Flathub** — fill in real `sha256`/commits in `flatpak/io.github.wahid7852.YAWF.yml`,
+* **Flathub** — fill in real `sha256`/commits in `packaging/flatpak/io.github.wahid7852.YAWF.yml`,
   test with `flatpak-builder`, then open a PR to the `flathub/flathub` repo.
 
 ## Pre-release checks

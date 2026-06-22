@@ -68,7 +68,7 @@ Grab a `.deb`, `.AppImage`, or `.snap` from the
 channel:
 
 * **Arch (AUR)**: `yay -S yawf` — packaging in [`packaging/aur`](packaging/aur)
-* **Flatpak / Flathub**: manifest in [`flatpak`](flatpak) *(submission in progress)*
+* **Flatpak / Flathub**: manifest in [`packaging/flatpak`](packaging/flatpak) *(submission in progress)*
 * **Snap**: `snap install yawf` *(publishing in progress)*
 
 > Migrating from WasIstLos? On first launch YAWF copies your existing
@@ -123,7 +123,7 @@ make install
 ## Packaging
 
 See [`RELEASING.md`](RELEASING.md) for how a release is cut and shipped to each
-channel. The `debian/`, `snap/`, `appimage/`, `packaging/aur/` and `flatpak/`
+channel. The `debian/` and `snap/` dirs (root, required by their tools) plus `packaging/appimage/`, `packaging/aur/` and `packaging/flatpak/`
 directories hold the per-channel recipes.
 
 

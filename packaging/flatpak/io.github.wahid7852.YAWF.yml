@@ -8,7 +8,7 @@
 #     (WebKitGTK 4.1 is provided by org.gnome.Platform).
 #
 # Build locally with:
-#   flatpak-builder --user --install --force-clean build-flatpak flatpak/io.github.wahid7852.YAWF.yml
+#   flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/io.github.wahid7852.YAWF.yml
 
 app-id: io.github.wahid7852.YAWF
 runtime: org.gnome.Platform
