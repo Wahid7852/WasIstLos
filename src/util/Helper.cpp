@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <unistd.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -14,6 +15,38 @@
 
 namespace wil::util
 {
+    void migrateLegacyUserData()
+    {
+        namespace fs                = std::filesystem;
+        constexpr auto const legacy = "wasistlos";
+        if (std::string{WIL_NAME} == legacy)
+        {
+            return;
+        }
+
+        for (auto const& base : {Glib::get_user_config_dir(), Glib::get_user_data_dir(), Glib::get_user_cache_dir()})
+        {
+            auto const oldDir = fs::path{base} / legacy;
+            auto const newDir = fs::path{base} / WIL_NAME;
+
+            std::error_code ec;
+            if (!fs::exists(oldDir, ec) || fs::exists(newDir, ec))
+            {
+                continue;
+            }
+
+            fs::copy(oldDir, newDir, fs::copy_options::recursive | fs::copy_options::copy_symlinks, ec);
+            if (ec)
+            {
+                std::cerr << "Migration: failed to copy " << oldDir << " -> " << newDir << ": " << ec.message() << std::endl;
+            }
+            else
+            {
+                std::cerr << "Migration: copied legacy data " << oldDir << " -> " << newDir << std::endl;
+            }
+        }
+    }
+
     namespace
     {
         bool fileHasContent(std::string const& path)

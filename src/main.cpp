@@ -78,6 +78,8 @@ int main(int argc, char** argv)
 {
     argc = extractProfile(argc, argv);
 
+    wil::util::migrateLegacyUserData();
+
     applyVideoWorkarounds();
     applyMemoryPressureSettings();
 
