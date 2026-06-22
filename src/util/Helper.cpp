@@ -23,8 +23,10 @@ namespace wil::util
         }
     }
 
-    std::optional<std::string> captureScreenRegionToPng()
+    std::optional<std::string> captureScreenRegionToPng(bool& toolMissing)
     {
+        toolMissing = true;
+
         auto path = std::string{};
         try
         {
@@ -58,6 +60,8 @@ namespace wil::util
             {
                 continue;
             }
+
+            toolMissing = false;
 
             auto const status = std::system(command.c_str());
             if (status == 0 && fileHasContent(path))

@@ -380,13 +380,18 @@ namespace wil::ui
 
     void MainWindow::onScreenshot()
     {
-        auto const path = util::captureScreenRegionToPng();
+        auto       toolMissing = false;
+        auto const path        = util::captureScreenRegionToPng(toolMissing);
         if (!path.has_value())
         {
-            auto dialog = Gtk::MessageDialog{*this, _("Screenshot failed"), false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK, true};
-            dialog.set_secondary_text(_("No supported screenshot tool was found. Install one of: "
-                                        "spectacle (KDE), gnome-screenshot (GNOME), grim + slurp (wlroots), maim, flameshot, or ImageMagick."));
-            dialog.run();
+            // Stay silent on a normal cancel; only nag when there's no tool to use at all.
+            if (toolMissing)
+            {
+                auto dialog = Gtk::MessageDialog{*this, _("No screenshot tool found"), false, Gtk::MESSAGE_WARNING, Gtk::BUTTONS_OK, true};
+                dialog.set_secondary_text(_("Install one of: spectacle (KDE), gnome-screenshot (GNOME), "
+                                            "grim + slurp (wlroots), maim, flameshot, or ImageMagick."));
+                dialog.run();
+            }
             return;
         }
 
