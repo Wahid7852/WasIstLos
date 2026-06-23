@@ -320,6 +320,7 @@ namespace wil::ui
         webkit_user_content_manager_register_script_message_handler(contentManager, "yawf");
         g_signal_connect(contentManager, "script-message-received::yawf", G_CALLBACK(scriptMessageReceived), this);
 
+        injectUserAgentHints();
         injectCrashRecoveryScript();
         injectCtrlEnterSendScript();
 
@@ -649,6 +650,39 @@ namespace wil::ui
     void WebView::applyCustomCss(const std::string& cssFilePath)
     {
         addStyleSheet(loadCssContent(cssFilePath));
+    }
+
+    void WebView::injectUserAgentHints()
+    {
+        // The Chrome-on-Linux User-Agent isn't enough: WebKitGTK still reports navigator.vendor
+        // "Apple Computer, Inc." and no userAgentData, so WhatsApp labels the linked device
+        // "Safari (Mac OS)". Present Chrome/Linux navigator hints at document-start (before
+        // WhatsApp's bundle runs). The device name is cached at link time, so re-link to update it.
+        static char const* const source = R"JS(
+        (function() {
+            function def(prop, val) {
+                try { Object.defineProperty(Navigator.prototype, prop, { get: function() { return val; }, configurable: true }); }
+                catch (e) { try { Object.defineProperty(navigator, prop, { get: function() { return val; }, configurable: true }); } catch (e2) {} }
+            }
+            def("vendor", "Google Inc.");
+            def("platform", "Linux x86_64");
+            try {
+                if (!navigator.userAgentData) {
+                    Object.defineProperty(navigator, "userAgentData", { configurable: true, value: {
+                        brands: [{brand: "Chromium", version: "137"}, {brand: "Google Chrome", version: "137"}, {brand: "Not/A)Brand", version: "24"}],
+                        mobile: false,
+                        platform: "Linux"
+                    }});
+                }
+            } catch (e) {}
+        })();
+        )JS";
+
+        auto* const script
+            = webkit_user_script_new(source, WEBKIT_USER_CONTENT_INJECT_TOP_FRAME, WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, nullptr, nullptr);
+        auto* const manager = webkit_web_view_get_user_content_manager(*this);
+        webkit_user_content_manager_add_script(manager, script);
+        webkit_user_script_unref(script);
     }
 
     void WebView::injectCrashRecoveryScript()

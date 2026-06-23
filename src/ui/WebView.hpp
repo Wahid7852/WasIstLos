@@ -51,6 +51,7 @@ namespace wil::ui
             bool onTimeout();
             void applyCustomCss(const std::string& cssFilePath);
             void addStyleSheet(std::string const& css);
+            void injectUserAgentHints();
             void injectCrashRecoveryScript();
             void injectCtrlEnterSendScript();
 
