@@ -379,15 +379,34 @@ namespace wil::ui
     {
         if (auto const uriPrefix = std::string{"whatsapp:/"}; url.find(uriPrefix) != std::string::npos)
         {
-            url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
+            // Group invites have no WhatsApp Web route (web.whatsapp.com/chat 404s), so navigating
+            // would just white-screen the app. They're only joinable in the native phone app; ignore.
+            std::string target;
+            if (auto const pos = url.find("code="); pos != std::string::npos)
+            {
+                // Group invite: hand the canonical chat.whatsapp.com link to the loaded SPA via an
+                // in-page click so WhatsApp opens its in-app join modal. (A top-frame navigation to
+                // web.whatsapp.com/chat 404s, and navigating to chat.whatsapp.com bounces to the app.)
+                auto code = url.substr(pos + 5);
+                if (auto const end = code.find_first_of("&#"); end != std::string::npos)
+                {
+                    code = code.substr(0, end);
+                }
+                target = "https://chat.whatsapp.com/" + code;
+            }
+            else
+            {
+                url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
+                target = url;
+            }
 
-            std::cerr << "WebView: Sending request: " << url << std::endl;
+            std::cerr << "WebView: Sending request: " << target << std::endl;
 
             auto script = std::string{};
             script.append("(function(){"
                           "var a = document.createElement(\"a\");"
                           "a.href = \"");
-            script.append(url);
+            script.append(target);
             script.append("\";"
                           "document.body.appendChild(a);"
                           "a.click();"
