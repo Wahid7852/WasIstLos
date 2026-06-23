@@ -99,27 +99,9 @@ namespace wil::ui
                     return TRUE;
                 }
 
-                case WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION:
-                {
-                    // Diagnostic: log every navigation so we can see what an in-chat invite click does.
-                    auto const navigationDecision = WEBKIT_NAVIGATION_POLICY_DECISION(decision);
-                    auto const navigationAction   = webkit_navigation_policy_decision_get_navigation_action(navigationDecision);
-                    auto const request            = webkit_navigation_action_get_request(navigationAction);
-                    std::cerr << "WebView: navigation -> " << webkit_uri_request_get_uri(request) << std::endl;
-                    return FALSE;
-                }
-
                 default:
                     return FALSE;
             }
-        }
-
-        // Diagnostics: log network/load failures with the failing URL and error.
-        gboolean loadFailed(WebKitWebView*, WebKitLoadEvent loadEvent, char* failingUri, GError* error, gpointer)
-        {
-            std::cerr << "WebView: load-failed (event " << loadEvent << ") " << (failingUri ? failingUri : "?") << ": "
-                      << (error ? error->message : "unknown error") << std::endl;
-            return FALSE;
         }
 
         gboolean downloadDecideDestination(WebKitDownload* download, char* suggestedFilename, gpointer)
@@ -219,10 +201,6 @@ namespace wil::ui
                     webView->recoverFromDatabaseError();
                 }
             }
-            else
-            {
-                std::cerr << "WebView: " << message << std::endl;
-            }
         }
 
         bool cssFileExists(const std::string& filePath)
@@ -308,7 +286,6 @@ namespace wil::ui
         g_signal_connect(*this, "decide-policy", G_CALLBACK(decidePolicy), nullptr);
         g_signal_connect(*this, "show-notification", G_CALLBACK(showNotification), this);
         g_signal_connect(*this, "web-process-terminated", G_CALLBACK(detail::webProcessTerminated), this);
-        g_signal_connect(*this, "load-failed", G_CALLBACK(loadFailed), nullptr);
         g_signal_connect(webContext, "download-started", G_CALLBACK(downloadStarted), nullptr);
         g_signal_connect(webContext, "initialize-notification-permissions", G_CALLBACK(initializeNotificationPermission), nullptr);
         Glib::signal_timeout().connect(sigc::mem_fun(*this, &WebView::onTimeout), 5000);
@@ -389,34 +366,23 @@ namespace wil::ui
     {
         if (auto const uriPrefix = std::string{"whatsapp:/"}; url.find(uriPrefix) != std::string::npos)
         {
-            // Group invites have no WhatsApp Web route (web.whatsapp.com/chat 404s), so navigating
-            // would just white-screen the app. They're only joinable in the native phone app; ignore.
-            std::string target;
-            if (auto const pos = url.find("code="); pos != std::string::npos)
+            // Group invites (code=...) can't be joined via WhatsApp Web — there's no URL for it; the
+            // SPA only handles them on a real in-chat click. Ignore rather than white-screen the app.
+            if (url.find("code=") != std::string::npos)
             {
-                // Group invite: hand the canonical chat.whatsapp.com link to the loaded SPA via an
-                // in-page click so WhatsApp opens its in-app join modal. (A top-frame navigation to
-                // web.whatsapp.com/chat 404s, and navigating to chat.whatsapp.com bounces to the app.)
-                auto code = url.substr(pos + 5);
-                if (auto const end = code.find_first_of("&#"); end != std::string::npos)
-                {
-                    code = code.substr(0, end);
-                }
-                target = "https://chat.whatsapp.com/" + code;
-            }
-            else
-            {
-                url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
-                target = url;
+                std::cerr << "WebView: group invites can't be opened via WhatsApp Web; ignoring " << url << std::endl;
+                return;
             }
 
-            std::cerr << "WebView: Sending request: " << target << std::endl;
+            url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
+
+            std::cerr << "WebView: Sending request: " << url << std::endl;
 
             auto script = std::string{};
             script.append("(function(){"
                           "var a = document.createElement(\"a\");"
                           "a.href = \"");
-            script.append(target);
+            script.append(url);
             script.append("\";"
                           "document.body.appendChild(a);"
                           "a.click();"
@@ -602,10 +568,6 @@ namespace wil::ui
 
         if (loadEvent == WEBKIT_LOAD_FINISHED)
         {
-            if (auto const* const uri = webkit_web_view_get_uri(*this))
-            {
-                std::cerr << "WebView: loaded " << uri << std::endl;
-            }
             // Re-seed the composer behavior flag on every (re)load from the saved preference.
             setCtrlEnterSend(util::Settings::getInstance().getValue<bool>("general", "ctrl-enter-send", false));
         }
@@ -752,9 +714,6 @@ namespace wil::ui
             function post(msg) {
                 try { window.webkit.messageHandlers.yawf.postMessage(msg); } catch (e) {}
             }
-            window.addEventListener("error", function(e) {
-                post("js-error: " + (e && e.message ? e.message : String(e)));
-            });
             function recent() {
                 try {
                     var now = Date.now();
