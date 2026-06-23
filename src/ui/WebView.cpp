@@ -4,7 +4,6 @@
 #include <fstream>
 #include <streambuf>
 #include <optional>
-#include <string_view>
 #include <locale>
 #include <glibmm/base64.h>
 #include <glibmm/i18n.h>
@@ -82,20 +81,7 @@ namespace wil::ui
             return TRUE;
         }
 
-        // WhatsApp's own link hosts (group invites, click-to-chat) should open in the app, not bounce
-        // to an external browser.
-        bool isWhatsAppLink(char const* uri)
-        {
-            if (!uri)
-            {
-                return false;
-            }
-            auto const u = std::string_view{uri};
-            return u.find("chat.whatsapp.com") != std::string_view::npos || u.find("wa.me") != std::string_view::npos
-                   || u.find("api.whatsapp.com") != std::string_view::npos || u.find("web.whatsapp.com") != std::string_view::npos;
-        }
-
-        gboolean decidePolicy(WebKitWebView* webView, WebKitPolicyDecision* decision, WebKitPolicyDecisionType decisionType, gpointer)
+        gboolean decidePolicy(WebKitWebView*, WebKitPolicyDecision* decision, WebKitPolicyDecisionType decisionType, gpointer)
         {
             switch (decisionType)
             {
@@ -106,15 +92,10 @@ namespace wil::ui
                     auto const request            = webkit_navigation_action_get_request(navigationAction);
                     auto const uri                = webkit_uri_request_get_uri(request);
 
-                    if (isWhatsAppLink(uri))
-                    {
-                        webkit_web_view_load_uri(webView, uri);
-                    }
-                    else if (GError* error = nullptr; !gtk_show_uri_on_window(nullptr, uri, GDK_CURRENT_TIME, &error))
+                    if (GError* error = nullptr; !gtk_show_uri_on_window(nullptr, uri, GDK_CURRENT_TIME, &error))
                     {
                         std::cerr << "WebView: Failed to show uri: " << error->message << std::endl;
                     }
-                    webkit_policy_decision_ignore(decision);
                     return TRUE;
                 }
 
@@ -383,21 +364,6 @@ namespace wil::ui
 
     void WebView::sendRequest(std::string url)
     {
-        // Group invite (has a "code=" query): load the canonical chat.whatsapp.com link, the only URL
-        // WhatsApp Web actually joins from. Converting it to web.whatsapp.com/... just renders blank.
-        if (auto const pos = url.find("code="); pos != std::string::npos)
-        {
-            auto code = url.substr(pos + 5);
-            if (auto const end = code.find_first_of("&#"); end != std::string::npos)
-            {
-                code = code.substr(0, end);
-            }
-            auto const invite = "https://chat.whatsapp.com/" + code;
-            std::cerr << "WebView: Opening invite: " << invite << std::endl;
-            webkit_web_view_load_uri(*this, invite.c_str());
-            return;
-        }
-
         if (auto const uriPrefix = std::string{"whatsapp:/"}; url.find(uriPrefix) != std::string::npos)
         {
             url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
@@ -416,11 +382,6 @@ namespace wil::ui
                           "})();");
 
             webkit_web_view_evaluate_javascript(*this, script.c_str(), -1, nullptr, nullptr, nullptr, nullptr, nullptr);
-        }
-        else if (isWhatsAppLink(url.c_str()))
-        {
-            // A WhatsApp https link (group invite / wa.me) passed to the app: open it in the view.
-            webkit_web_view_load_uri(*this, url.c_str());
         }
         else
         {
