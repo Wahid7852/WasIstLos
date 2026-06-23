@@ -298,7 +298,9 @@ namespace wil::ui
 
     WebView::~WebView()
     {
-        webkit_web_view_terminate_web_process(*this);
+        // Close the page cleanly instead of SIGKILLing the web process, so storage can flush
+        // rather than risk corrupting WhatsApp's local database on quit.
+        webkit_web_view_try_close(*this);
     }
 
     WebView::operator WebKitWebView*()
