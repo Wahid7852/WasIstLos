@@ -52,7 +52,6 @@ namespace wil::ui
             void applyCustomCss(const std::string& cssFilePath);
             void addStyleSheet(std::string const& css);
             void injectUserAgentHints();
-            void logNavigatorInfo();
             void injectCrashRecoveryScript();
             void injectCtrlEnterSendScript();
 

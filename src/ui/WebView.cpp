@@ -181,8 +181,7 @@ namespace wil::ui
             return FALSE;
         }
 
-        // Receives messages the injected scripts post to window.webkit.messageHandlers.yawf:
-        // "dberror" triggers IndexedDB recovery, anything else is logged for diagnostics.
+        // Handles "dberror" posted by the crash-recovery script to window.webkit.messageHandlers.yawf.
         void scriptMessageReceived(WebKitUserContentManager*, WebKitJavascriptResult* result, gpointer userData)
         {
             auto* const value = webkit_javascript_result_get_js_value(result);
@@ -195,14 +194,12 @@ namespace wil::ui
             auto const   message = std::string{raw ? raw : ""};
             g_free(raw);
 
-            auto* const webView = static_cast<WebView*>(userData);
-            if (message == "dberror" && webView)
+            if (message == "dberror")
             {
-                webView->recoverFromDatabaseError();
-            }
-            else
-            {
-                std::cerr << "WebView: " << message << std::endl;
+                if (auto* const webView = static_cast<WebView*>(userData))
+                {
+                    webView->recoverFromDatabaseError();
+                }
             }
         }
 
@@ -303,9 +300,8 @@ namespace wil::ui
         auto const settings  = webkit_web_view_get_settings(*this);
         auto const userAgent = util::Settings::getInstance().getValue<Glib::ustring>("web", "user-agent", "");
         webkit_settings_set_user_agent(settings, userAgent.empty() ? USER_AGENT : userAgent.c_str());
-        // WebKitGTK force-overrides the UA with a frozen macOS-Safari string for web.whatsapp.com via
-        // its built-in site quirks, which is why the linked device shows "Safari (Mac OS)" and WhatsApp
-        // serves its Safari code path. Disable site quirks so our Chrome-on-Linux UA actually applies.
+        // WebKitGTK's site quirks force a frozen macOS-Safari UA for web.whatsapp.com (overriding ours);
+        // disable them so our Chrome-on-Linux UA applies and WhatsApp uses its Chrome path.
         webkit_settings_set_enable_site_specific_quirks(settings, FALSE);
         webkit_settings_set_enable_developer_extras(settings, TRUE);
         auto const hwAccelPolicy = toHwAccelPolicy(util::Settings::getInstance().getValue<int>("web", "hw-accel", WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS));
@@ -566,41 +562,9 @@ namespace wil::ui
         {
             // Re-seed the composer behavior flag on every (re)load from the saved preference.
             setCtrlEnterSend(util::Settings::getInstance().getValue<bool>("general", "ctrl-enter-send", false));
-            logNavigatorInfo();
         }
 
         m_signalLoadStatus.emit(m_loadStatus);
-    }
-
-    void WebView::logNavigatorInfo()
-    {
-        // Diagnostic: log what the WhatsApp page actually sees (runs in the page's main world), so we
-        // can tell whether our navigator overrides took and what WhatsApp uses to name the device.
-        static char const* const js = "JSON.stringify({ua:navigator.userAgent,vendor:navigator.vendor,platform:navigator.platform,"
-                                      "uad:(navigator.userAgentData?navigator.userAgentData.platform:null)})";
-        webkit_web_view_evaluate_javascript(
-            *this, js, -1, nullptr, nullptr, nullptr,
-            [](GObject* source, GAsyncResult* result, gpointer)
-            {
-                GError*     error = nullptr;
-                auto* const value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), result, &error);
-                if (!value)
-                {
-                    if (error)
-                    {
-                        std::cerr << "WebView: navigator probe failed: " << error->message << std::endl;
-                        g_error_free(error);
-                    }
-                    return;
-                }
-                if (jsc_value_is_string(value))
-                {
-                    gchar* const json = jsc_value_to_string(value);
-                    std::cerr << "WebView: navigator " << json << std::endl;
-                    g_free(json);
-                }
-            },
-            nullptr);
     }
 
     void WebView::recoverFromDatabaseError()
@@ -690,10 +654,8 @@ namespace wil::ui
 
     void WebView::injectUserAgentHints()
     {
-        // The Chrome-on-Linux User-Agent isn't enough: WebKitGTK still reports navigator.vendor
-        // "Apple Computer, Inc." and no userAgentData, so WhatsApp labels the linked device
-        // "Safari (Mac OS)". Present Chrome/Linux navigator hints at document-start (before
-        // WhatsApp's bundle runs). The device name is cached at link time, so re-link to update it.
+        // Beyond the UA, WebKitGTK reports navigator.vendor "Apple Computer, Inc." and no
+        // userAgentData; present Chrome/Linux hints at document-start so WhatsApp sees a Chrome client.
         static char const* const source = R"JS(
         (function() {
             function def(prop, val) {
@@ -705,8 +667,7 @@ namespace wil::ui
             try {
                 if (!navigator.userAgentData) {
                     var brands = [{brand: "Chromium", version: "137"}, {brand: "Google Chrome", version: "137"}, {brand: "Not/A)Brand", version: "24"}];
-                    // Provide a *complete* userAgentData, including getHighEntropyValues(): WhatsApp's
-                    // browser detection calls it, and a partial object would throw and stall linking.
+                    // Must include getHighEntropyValues(); WhatsApp calls it and a partial object stalls linking.
                     var uad = {
                         brands: brands,
                         mobile: false,
@@ -745,9 +706,6 @@ namespace wil::ui
             function post(msg) {
                 try { window.webkit.messageHandlers.yawf.postMessage(msg); } catch (e) {}
             }
-            window.addEventListener("error", function(e) {
-                post("js-error: " + (e && e.message ? e.message : String(e)));
-            });
             function recent() {
                 try {
                     var now = Date.now();
