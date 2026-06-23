@@ -5,6 +5,8 @@
 #include <streambuf>
 #include <optional>
 #include <locale>
+#include <giomm/application.h>
+#include <giomm/notification.h>
 #include <glibmm/base64.h>
 #include <glibmm/i18n.h>
 #include <glibmm/main.h>
@@ -366,11 +368,27 @@ namespace wil::ui
     {
         if (auto const uriPrefix = std::string{"whatsapp:/"}; url.find(uriPrefix) != std::string::npos)
         {
-            // Group invites (code=...) can't be joined via WhatsApp Web — there's no URL for it; the
-            // SPA only handles them on a real in-chat click. Ignore rather than white-screen the app.
-            if (url.find("code=") != std::string::npos)
+            // Group invites (code=...) can't be joined via WhatsApp Web — the SPA only handles them on
+            // a real in-chat click. Copy the canonical link to the clipboard and notify so the user
+            // can paste it into a chat, instead of white-screening the app.
+            if (auto const pos = url.find("code="); pos != std::string::npos)
             {
-                std::cerr << "WebView: group invites can't be opened via WhatsApp Web; ignoring " << url << std::endl;
+                auto code = url.substr(pos + 5);
+                if (auto const end = code.find_first_of("&#"); end != std::string::npos)
+                {
+                    code = code.substr(0, end);
+                }
+                auto const invite = "https://chat.whatsapp.com/" + code;
+                Gtk::Clipboard::get()->set_text(invite);
+
+                auto notification = Gio::Notification::create(_("Group invite copied"));
+                notification->set_body(_("Paste it into any chat to join the group."));
+                if (auto const app = Gio::Application::get_default())
+                {
+                    app->send_notification("yawf-invite", notification);
+                }
+
+                std::cerr << "WebView: group invite copied to clipboard: " << invite << std::endl;
                 return;
             }
 
