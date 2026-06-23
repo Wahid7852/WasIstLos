@@ -104,6 +104,14 @@ namespace wil::ui
             }
         }
 
+        // Diagnostics: log network/load failures with the failing URL and error.
+        gboolean loadFailed(WebKitWebView*, WebKitLoadEvent loadEvent, char* failingUri, GError* error, gpointer)
+        {
+            std::cerr << "WebView: load-failed (event " << loadEvent << ") " << (failingUri ? failingUri : "?") << ": "
+                      << (error ? error->message : "unknown error") << std::endl;
+            return FALSE;
+        }
+
         gboolean downloadDecideDestination(WebKitDownload* download, char* suggestedFilename, gpointer)
         {
             auto dialog = Gtk::FileChooserDialog{_("Save File"), Gtk::FILE_CHOOSER_ACTION_SAVE};
@@ -201,6 +209,10 @@ namespace wil::ui
                     webView->recoverFromDatabaseError();
                 }
             }
+            else
+            {
+                std::cerr << "WebView: " << message << std::endl;
+            }
         }
 
         bool cssFileExists(const std::string& filePath)
@@ -286,6 +298,7 @@ namespace wil::ui
         g_signal_connect(*this, "decide-policy", G_CALLBACK(decidePolicy), nullptr);
         g_signal_connect(*this, "show-notification", G_CALLBACK(showNotification), this);
         g_signal_connect(*this, "web-process-terminated", G_CALLBACK(detail::webProcessTerminated), this);
+        g_signal_connect(*this, "load-failed", G_CALLBACK(loadFailed), nullptr);
         g_signal_connect(webContext, "download-started", G_CALLBACK(downloadStarted), nullptr);
         g_signal_connect(webContext, "initialize-notification-permissions", G_CALLBACK(initializeNotificationPermission), nullptr);
         Glib::signal_timeout().connect(sigc::mem_fun(*this, &WebView::onTimeout), 5000);
@@ -560,6 +573,10 @@ namespace wil::ui
 
         if (loadEvent == WEBKIT_LOAD_FINISHED)
         {
+            if (auto const* const uri = webkit_web_view_get_uri(*this))
+            {
+                std::cerr << "WebView: loaded " << uri << std::endl;
+            }
             // Re-seed the composer behavior flag on every (re)load from the saved preference.
             setCtrlEnterSend(util::Settings::getInstance().getValue<bool>("general", "ctrl-enter-send", false));
         }
@@ -706,6 +723,9 @@ namespace wil::ui
             function post(msg) {
                 try { window.webkit.messageHandlers.yawf.postMessage(msg); } catch (e) {}
             }
+            window.addEventListener("error", function(e) {
+                post("js-error: " + (e && e.message ? e.message : String(e)));
+            });
             function recent() {
                 try {
                     var now = Date.now();
