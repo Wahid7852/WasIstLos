@@ -383,6 +383,21 @@ namespace wil::ui
 
     void WebView::sendRequest(std::string url)
     {
+        // Group invite (has a "code=" query): load the canonical chat.whatsapp.com link, the only URL
+        // WhatsApp Web actually joins from. Converting it to web.whatsapp.com/... just renders blank.
+        if (auto const pos = url.find("code="); pos != std::string::npos)
+        {
+            auto code = url.substr(pos + 5);
+            if (auto const end = code.find_first_of("&#"); end != std::string::npos)
+            {
+                code = code.substr(0, end);
+            }
+            auto const invite = "https://chat.whatsapp.com/" + code;
+            std::cerr << "WebView: Opening invite: " << invite << std::endl;
+            webkit_web_view_load_uri(*this, invite.c_str());
+            return;
+        }
+
         if (auto const uriPrefix = std::string{"whatsapp:/"}; url.find(uriPrefix) != std::string::npos)
         {
             url.replace(0U, uriPrefix.size(), WHATSAPP_WEB_URI);
