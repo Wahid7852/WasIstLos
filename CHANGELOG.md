@@ -21,9 +21,18 @@ First release of **YAWF** (Yet Another WhatsApp Fork), forked from
   (`Ctrl+Shift+N`).
 * Optional "send with `Ctrl+Enter`" composer mode (Preferences).
 * One-time migration of existing `wasistlos` config/session/settings on first run.
+* `whatsapp:` scheme links open/raise the app; group-invite links are copied to
+  the clipboard with a notification (WhatsApp Web can't join them directly).
+* Automatic recovery from WhatsApp's "A database error occurred" screen by clearing
+  the corrupted local storage and reloading for a clean re-link.
 
 ### Changed
 * Rebranded to YAWF; binary is now `yawf`.
+* The linked device now identifies as Chrome on Linux instead of "Safari (Mac OS)",
+  which also makes device linking reliable.
+* No longer force-kills the web process under memory pressure — that was corrupting
+  WhatsApp's local database and logging you out / breaking device linking.
+* Disabled the DMABUF renderer to avoid a libEGL teardown crash on Intel/Mesa.
 * Faster warm reloads via the web-browser cache model.
 * Smoother UI: the crash-screen watcher no longer forces a layout reflow on a timer.
 * GStreamer logging capped by default and the logger pipe made non-blocking so a
