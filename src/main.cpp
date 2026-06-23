@@ -40,16 +40,17 @@ namespace
     // before the first web context (i.e. the first WebView) is created.
     void applyMemoryPressureSettings()
     {
-        // WhatsApp Web's live JS heap (~1-1.5 GB) cannot be reclaimed by cache eviction. Keep normal
-        // usage below every threshold so WebKit does not run routine full GCs that stutter typing;
-        // only act on a genuine runaway. The kill is caught by WebView's crash handler, which reloads.
-        // Set strict before conservative: the setters assert conservative < strict at call time.
+        // Only ask WebKit to release caches under memory pressure; never set a kill threshold.
+        // SIGKILLing the web process mid-IndexedDB-write corrupts WhatsApp's local database (the
+        // "A database error occurred on your browser" screen) and logs the user out, so we leave
+        // the kill threshold at its default of 0 (disabled). Thresholds are set high so a normal
+        // ~1-1.5 GB session never triggers routine cache churn. Strict before conservative: the
+        // setters assert conservative < strict.
         WebKitMemoryPressureSettings* const settings = webkit_memory_pressure_settings_new();
-        webkit_memory_pressure_settings_set_memory_limit(settings, 3072U);          // MB
-        webkit_memory_pressure_settings_set_strict_threshold(settings, 0.8);        // release all caches (~2.4 GB)
-        webkit_memory_pressure_settings_set_conservative_threshold(settings, 0.6);  // start releasing caches (~1.8 GB)
-        webkit_memory_pressure_settings_set_kill_threshold(settings, 1.3);          // kill a runaway process (~4 GB)
-        webkit_memory_pressure_settings_set_poll_interval(settings, 30.0);          // seconds
+        webkit_memory_pressure_settings_set_memory_limit(settings, 8192U);           // MB accounting base
+        webkit_memory_pressure_settings_set_strict_threshold(settings, 0.85);        // release all caches
+        webkit_memory_pressure_settings_set_conservative_threshold(settings, 0.65);  // start releasing caches
+        webkit_memory_pressure_settings_set_poll_interval(settings, 30.0);           // seconds
 
         webkit_website_data_manager_set_memory_pressure_settings(settings);
         webkit_memory_pressure_settings_free(settings);
