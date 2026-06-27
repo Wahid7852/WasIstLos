@@ -1,5 +1,5 @@
 name: yawf
-base: core22
+base: core24
 grade: stable
 confinement: strict
 adopt-info: yawf
@@ -7,11 +7,9 @@ license: GPL-3.0
 website: https://github.com/Wahid7852/YAWF
 icon: resource/image/icons/hicolor/256x256/apps/io.github.wahid7852.YAWF.png
 
-architectures:
-  - build-on: [amd64]
-    build-for: [amd64]
-  - build-on: [arm64]
-    build-for: [arm64]
+platforms:
+  amd64:
+  arm64:
 
 parts:
   yawf:
@@ -79,4 +77,4 @@ apps:
       - dbus-app
 
 assumes:
-  - snapd2.55
+  - snapd2.63
