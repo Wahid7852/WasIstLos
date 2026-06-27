@@ -12,7 +12,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Dependencies
         run: |
@@ -53,13 +55,6 @@ jobs:
           recipe: "./packaging/appimage/AppImageBuilder.yml"
         env:
           UPDATE_INFO: gh-releases-zsync|Wahid7852|YAWF|${{ env.RELEASE_VERSION }}|*x86_64.AppImage.zsync
-
-      - name: Push Tag
-        id: push-tag
-        uses: anothrNick/github-tag-action@1.46.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CUSTOM_TAG: ${{ env.RELEASE_TAG }}
 
       - name: Extract Changelog
         id: changelog
