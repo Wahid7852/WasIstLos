@@ -53,7 +53,19 @@
   <update_contact>wahidzk0091_AT_gmail.com</update_contact>
 
   <releases>
-    <release version="2.0.0" date="${WIL_BUILD_DATE}">
+    <release version="2.1.0" date="${WIL_BUILD_DATE}">
+      <description>
+        <p>Memory reliability and performance release.</p>
+        <ul>
+          <li>Auto-reload after 4 hours idle to reclaim accumulated JS heap</li>
+          <li>Tray Refresh option for on-demand reload</li>
+          <li>Fixed WebKit memory pressure thresholds that were too high to ever fire</li>
+          <li>JavaScriptCore concurrent and generational GC enabled for smoother message storms</li>
+        </ul>
+      </description>
+      <url>https://github.com/Wahid7852/YAWF/releases/tag/v2.1.0</url>
+    </release>
+    <release version="2.0.0" date="2026-06-23">
       <description>
         <p>First release of the YAWF fork.</p>
         <ul>
@@ -64,7 +76,7 @@
           <li>Faster startup and smoother UI</li>
         </ul>
       </description>
-      <url>https://github.com/Wahid7852/YAWF/releases/tag/v${WIL_VERSION}</url>
+      <url>https://github.com/Wahid7852/YAWF/releases/tag/v2.0.0</url>
     </release>
   </releases>
 </component>

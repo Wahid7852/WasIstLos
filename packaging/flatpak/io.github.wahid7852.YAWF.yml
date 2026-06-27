@@ -12,7 +12,7 @@
 
 app-id: io.github.wahid7852.YAWF
 runtime: org.gnome.Platform
-runtime-version: '46'
+runtime-version: '48'
 sdk: org.gnome.Sdk
 command: yawf
 
@@ -58,7 +58,7 @@ modules:
     sources:
       - type: archive
         url: https://www.cairographics.org/releases/cairomm-1.14.5.tar.xz
-        sha256: TODO
+        sha256: 70136203540c884e89ce1c9edfb6369b9953937f6cd596d97c78c9758a5d48db
 
   - name: pangomm
     buildsystem: meson
@@ -86,7 +86,7 @@ modules:
     buildsystem: cmake-ninja
     sources:
       - type: git
-        url: https://github.com/AyatanaIndicators/libayatana-ido.git
+        url: https://github.com/AyatanaIndicators/ayatana-ido.git
         tag: '0.10.4'
 
   - name: libayatana-indicator
@@ -94,7 +94,16 @@ modules:
     sources:
       - type: git
         url: https://github.com/AyatanaIndicators/libayatana-indicator.git
-        tag: '0.9.4'
+        tag: '0.9.5'
+
+  # Build-time tool needed by libdbusmenu-gtk3 (not shipped); not in the runtime.
+  - name: intltool
+    cleanup:
+      - '*'
+    sources:
+      - type: archive
+        url: https://launchpad.net/intltool/trunk/0.51.0/+download/intltool-0.51.0.tar.gz
+        sha256: 67c74d94196b153b774ab9f89b2fa6c6ba79352407037c8c14d5aeb334e959cd
 
   - name: libdbusmenu-gtk3
     buildsystem: autotools
@@ -103,10 +112,18 @@ modules:
       - --disable-dumper
       - --disable-tests
       - --disable-gtk-doc
+      - --disable-static
     sources:
       - type: archive
         url: https://launchpad.net/libdbusmenu/16.04/16.04.0/+download/libdbusmenu-16.04.0.tar.gz
         sha256: b9cc4a2acd74509435892823607d966d424bd9ad5d0b00938f27240a1bfa878a
+      # libdbusmenu 16.04 breaks under modern automake: the HAVE_VALGRIND conditional. Drop the
+      # valgrind test dependency, force the conditional off, and regenerate the build files.
+      - type: shell
+        commands:
+          - sed -i '/PKG_CHECK_MODULES(DBUSMENUTESTSVALGRIND/d' configure.ac
+          - sed -i 's/^AM_CONDITIONAL(\[HAVE_VALGRIND\].*/AM_CONDITIONAL([HAVE_VALGRIND], [false])/' configure.ac
+          - autoreconf -fi
 
   - name: libayatana-appindicator
     buildsystem: cmake-ninja
@@ -116,7 +133,7 @@ modules:
     sources:
       - type: git
         url: https://github.com/AyatanaIndicators/libayatana-appindicator.git
-        tag: '0.5.93'
+        tag: '0.6.0'
 
   - name: yawf
     buildsystem: cmake-ninja
@@ -125,4 +142,4 @@ modules:
     sources:
       - type: git
         url: https://github.com/Wahid7852/YAWF.git
-        tag: v2.0.0
+        tag: v2.1.0

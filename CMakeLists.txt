@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(
         yawf
-        VERSION 2.0.0
+        VERSION 2.1.0
         DESCRIPTION "An unofficial WhatsApp desktop application for Linux"
         HOMEPAGE_URL "https://github.com/Wahid7852/YAWF"
         LANGUAGES C CXX

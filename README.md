@@ -36,6 +36,16 @@ formatting shortcuts, screenshot-to-chat).
 * **Auto-recovery**: if WhatsApp Web hits its "We encountered a problem"
   crash screen, the app reloads itself automatically (with a backoff so it
   never loops endlessly)
+* **Memory-managed sessions**: WebKit memory pressure thresholds are derived
+  from your actual RAM (40% of physical memory, polled every 5 s) so the web
+  process never silently grows to an OOM crash. JavaScriptCore's concurrent and
+  generational GC are enabled to keep the heap lean during high-volume group chats
+* **Idle heap reset**: after 4 hours with no keyboard or scroll input, YAWF
+  silently reloads WhatsApp Web to clear accumulated JS heap. Messages reload
+  from local storage in seconds — no re-linking, no server re-fetch. Any
+  interaction resets the timer so active sessions are never interrupted
+* **Tray → Refresh**: on-demand reload from the system-tray menu when you notice
+  slowdown without waiting for the idle timer
 * Software-decode video workaround for glitchy hardware video paths
 * Web-browser cache model so reloads come back quickly from disk
 

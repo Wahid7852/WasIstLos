@@ -1,6 +1,6 @@
 # Maintainer: Wahid7852 <wahidzk0091@gmail.com>
 pkgname=yawf
-pkgver=2.0.0
+pkgver=2.1.0
 pkgrel=1
 pkgdesc="An unofficial WhatsApp desktop client for Linux (YAWF — Yet Another WhatsApp Fork)"
 arch=('x86_64' 'aarch64')

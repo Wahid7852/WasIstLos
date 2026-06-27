@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## 2.1.0
+
+### Added
+* **Auto-reload after 4 hours idle** — after four hours without a keypress or
+  scroll, YAWF silently reloads WhatsApp Web to reclaim the JS heap that
+  accumulates from high-volume group chats. Messages reload from local IndexedDB
+  in seconds; no re-link or server re-fetch required. Any interaction resets the
+  clock so active sessions are never interrupted.
+* **Tray → Refresh** — new menu item in the system-tray context menu for
+  on-demand reload when you notice slowdown, without waiting for the idle timer.
+
+### Fixed
+* WebKit memory pressure thresholds were set against an 8 GB base limit, meaning
+  they never triggered on real hardware before the OS OOM-killed the web process
+  at ~3 GB. Limit is now derived from `/proc/meminfo` (40% of physical RAM,
+  clamped to 2–4 GB) so cache-release fires at ~2 GB on an 8 GB machine.
+* Memory pressure is now polled every 5 s instead of every 30 s, so spikes from
+  message storms are caught before they become fatal.
+* Enabled JavaScriptCore concurrent GC (reduces main-thread stall during message
+  storms) and generational GC (short-lived message objects collected cheaply).
+* WebInspector bundle no longer loaded in normal use; set `YAWF_DEVTOOLS=1` to
+  re-enable it for debugging.
+* Unresponsive web-process detection tightened from 5 s to 3 s.
+
 ## 2.0.0
 
 First release of **YAWF** (Yet Another WhatsApp Fork), forked from

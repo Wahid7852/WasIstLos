@@ -9,9 +9,9 @@ icon: resource/image/icons/hicolor/256x256/apps/io.github.wahid7852.YAWF.png
 
 architectures:
   - build-on: [amd64]
-    run-on: [amd64]
+    build-for: [amd64]
   - build-on: [arm64]
-    run-on: [arm64]
+    build-for: [arm64]
 
 parts:
   yawf:
