@@ -7,6 +7,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -68,47 +70,15 @@ jobs:
           unreleased: false
           stripGeneratorNotice: true
 
-      - name: Create Release
-        id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          release_name: ${{ env.RELEASE_VERSION }}
+          name: ${{ env.RELEASE_VERSION }}
           body: ${{ steps.generate-changelog.outputs.changelog }}
           draft: false
           prerelease: false
-
-      - name: Upload Debian Package
-        id: upload-debian-package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: "yawf_${{ env.RELEASE_VERSION }}_amd64.deb"
-          asset_name: "yawf_${{ env.RELEASE_VERSION }}_amd64.deb"
-          asset_content_type: application/deb
-
-      - name: Upload Snap Package
-        id: upload-snap-package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.snapcraft.outputs.snap }}
-          asset_name: ${{ steps.snapcraft.outputs.snap }}
-          asset_content_type: application/snap
-
-      - name: Upload AppImage Package
-        id: upload-appimage-package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: "yawf-${{ env.RELEASE_VERSION }}-x86_64.AppImage"
-          asset_name: "yawf-${{ env.RELEASE_VERSION }}-x86_64.AppImage"
-          asset_content_type: application/appimage
+          files: |
+            yawf_${{ env.RELEASE_VERSION }}_amd64.deb
+            ${{ steps.snapcraft.outputs.snap }}
+            yawf-${{ env.RELEASE_VERSION }}-x86_64.AppImage
