@@ -40,6 +40,7 @@ namespace wil::ui
             double          getZoomLevel();
             std::string     getZoomLevelString();
             void            setMinFontSize(unsigned int fontSize);
+            void            resetIdleTimer() noexcept;
 
             sigc::signal<void, WebKitLoadEvent>& signalLoadStatus() noexcept;
             sigc::signal<void, bool>&            signalNotification() noexcept;
@@ -64,6 +65,7 @@ namespace wil::ui
             int                                 m_crashCount;
             gint64                              m_lastCrashTime;
             gint64                              m_lastDbRecovery;
+            gint64                              m_lastInteractionTime;
             sigc::signal<void, WebKitLoadEvent> m_signalLoadStatus;
             sigc::signal<void, bool>            m_signalNotification;
             sigc::signal<void>                  m_signalNotificationClicked;

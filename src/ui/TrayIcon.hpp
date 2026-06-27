@@ -17,6 +17,7 @@ namespace wil::ui
 
         public:
             sigc::signal<void>& signalShow() noexcept;
+            sigc::signal<void>& signalRefresh() noexcept;
             sigc::signal<void>& signalAbout() noexcept;
             sigc::signal<void>& signalQuit() noexcept;
 
@@ -24,6 +25,7 @@ namespace wil::ui
             AppIndicator*      m_appIndicator;
             Gtk::Menu          m_popupMenu;
             sigc::signal<void> m_signalShow;
+            sigc::signal<void> m_signalRefresh;
             sigc::signal<void> m_signalAbout;
             sigc::signal<void> m_signalQuit;
     };

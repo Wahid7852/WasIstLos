@@ -264,6 +264,7 @@ namespace wil::ui
         , m_crashCount{0}
         , m_lastCrashTime{0}
         , m_lastDbRecovery{0}
+        , m_lastInteractionTime{g_get_monotonic_time()}
         , m_signalLoadStatus{}
         , m_signalNotification{}
         , m_signalNotificationClicked{}
@@ -670,7 +671,24 @@ namespace wil::ui
         }
         m_stoppedResponding = !responsive;
 
+        // After a long idle period, silently reload to reclaim the JS heap that WhatsApp Web
+        // accumulates from high-volume group chats. Messages are in IndexedDB so they reload
+        // locally — no re-link or server re-fetch needed.
+        static constexpr gint64 k_idleThresholdUs = 4LL * 3600LL * G_USEC_PER_SEC;
+        auto const now = g_get_monotonic_time();
+        if (m_loadStatus == WEBKIT_LOAD_FINISHED && now - m_lastInteractionTime > k_idleThresholdUs)
+        {
+            std::cerr << "WebView: idle reload to reclaim JS heap" << std::endl;
+            m_lastInteractionTime = now;  // prevent re-triggering during reload
+            webkit_web_view_reload(*this);
+        }
+
         return true;
+    }
+
+    void WebView::resetIdleTimer() noexcept
+    {
+        m_lastInteractionTime = g_get_monotonic_time();
     }
 
     void WebView::applyCustomCss(const std::string& cssFilePath)

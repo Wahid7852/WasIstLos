@@ -86,6 +86,7 @@ namespace wil::ui
         m_webView.signalNotification().connect(sigc::mem_fun(*this, &MainWindow::onNotificationChanged));
         m_webView.signalNotificationClicked().connect(sigc::mem_fun(*this, &MainWindow::onShow));
         m_trayIcon.signalShow().connect(sigc::mem_fun(*this, &MainWindow::onShow));
+        m_trayIcon.signalRefresh().connect(sigc::mem_fun(*this, &MainWindow::onRefresh));
         m_trayIcon.signalAbout().connect(sigc::mem_fun(*this, &MainWindow::onAbout));
         m_trayIcon.signalQuit().connect(sigc::mem_fun(*this, &MainWindow::onQuit));
 
@@ -109,6 +110,8 @@ namespace wil::ui
 
     bool MainWindow::on_key_press_event(GdkEventKey* keyEvent)
     {
+        m_webView.resetIdleTimer();
+
         if (keyEvent->state & GDK_CONTROL_MASK)
         {
             auto const shift = static_cast<bool>(keyEvent->state & GDK_SHIFT_MASK);
@@ -246,6 +249,8 @@ namespace wil::ui
 
     bool MainWindow::on_scroll_event(GdkEventScroll* scrollEvent)
     {
+        m_webView.resetIdleTimer();
+
         if (scrollEvent->state & GDK_CONTROL_MASK)
         {
             switch (scrollEvent->direction)

@@ -35,6 +35,7 @@ namespace wil::ui
         : m_appIndicator{app_indicator_new(WIL_APP_ID ".Tray", "", APP_INDICATOR_CATEGORY_COMMUNICATIONS)}
         , m_popupMenu{}
         , m_signalShow{}
+        , m_signalRefresh{}
         , m_signalAbout{}
         , m_signalQuit{}
     {
@@ -42,16 +43,19 @@ namespace wil::ui
         app_indicator_set_icon_full(m_appIndicator, trayIconName, WIL_FRIENDLY_NAME " Tray");
         app_indicator_set_attention_icon_full(m_appIndicator, attentionIconName, WIL_FRIENDLY_NAME "Tray Attention");
 
-        auto const showMenuItem  = Gtk::manage(new Gtk::MenuItem{_("Show")});
-        auto const aboutMenuItem = Gtk::manage(new Gtk::MenuItem{_("About")});
-        auto const quitMenuItem  = Gtk::manage(new Gtk::MenuItem{_("Quit")});
+        auto const showMenuItem    = Gtk::manage(new Gtk::MenuItem{_("Show")});
+        auto const refreshMenuItem = Gtk::manage(new Gtk::MenuItem{_("Refresh")});
+        auto const aboutMenuItem   = Gtk::manage(new Gtk::MenuItem{_("About")});
+        auto const quitMenuItem    = Gtk::manage(new Gtk::MenuItem{_("Quit")});
         m_popupMenu.append(*showMenuItem);
+        m_popupMenu.append(*refreshMenuItem);
         m_popupMenu.append(*aboutMenuItem);
         m_popupMenu.append(*quitMenuItem);
 
         app_indicator_set_menu(m_appIndicator, m_popupMenu.gobj());
 
         showMenuItem->signal_activate().connect([this] { m_signalShow.emit(); });
+        refreshMenuItem->signal_activate().connect([this] { m_signalRefresh.emit(); });
         aboutMenuItem->signal_activate().connect([this] { m_signalAbout.emit(); });
         quitMenuItem->signal_activate().connect([this] { m_signalQuit.emit(); });
 
@@ -84,6 +88,11 @@ namespace wil::ui
     sigc::signal<void>& TrayIcon::signalShow() noexcept
     {
         return m_signalShow;
+    }
+
+    sigc::signal<void>& TrayIcon::signalRefresh() noexcept
+    {
+        return m_signalRefresh;
     }
 
     sigc::signal<void>& TrayIcon::signalAbout() noexcept
