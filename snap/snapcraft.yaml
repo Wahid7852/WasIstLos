@@ -27,7 +27,7 @@ parts:
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr/local
       cmake --build . -- -j$(nproc)
-      cmake --install . --destdir "$SNAPCRAFT_PART_INSTALL"
+      DESTDIR="$SNAPCRAFT_PART_INSTALL" cmake --install .
     build-packages:
       - intltool
       - libglib2.0-dev-bin
